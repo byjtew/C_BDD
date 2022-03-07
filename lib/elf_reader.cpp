@@ -7,9 +7,9 @@
 
 
 bool isElfFile(Elf_Ehdr &file) {
-  return file.e_ident[0] == 0x7F
-         && file.e_ident[1] == 0x45    /* E */
-         && file.e_ident[2] == 0x4C    /* L */
-         && file.e_ident[3] == 0x46;    /* F */
+  return file.e_ident[0] == ELFMAG0
+         && file.e_ident[1] == ELFMAG1    /* E */
+         && file.e_ident[2] == ELFMAG2    /* L */
+         && file.e_ident[3] == ELFMAG3;    /* F */
 }
 
