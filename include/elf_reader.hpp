@@ -21,23 +21,46 @@ using Elf_Phdr = Elf32_Phdr;
 
 #endif
 
+namespace elf {
+    enum {
+        ExecuteFlag = 1, WriteFlag = 2, ReadFlag = 4
+    };
 
-enum {
-    ExecuteFlag = 1, WriteFlag = 2, ReadFlag = 4
-};
+    [[maybe_unused]] void printElfHeader(const Elf_Ehdr &header, FILE *fp);
+
+    [[maybe_unused]] void
+    printElfProgramHeaders(const std::vector<Elf64_Phdr> &pHeaders, FILE *fp = stdout);
+
+    [[maybe_unused]] void
+    printElfProgramHeaderAt(int index, const Elf64_Phdr &pHeader, FILE *fp = stdout);
+
+    [[nodiscard]] bool isElfFile(Elf_Ehdr &header);
+
+    class ElfFile {
+    private:
+        Elf_Ehdr header{};
+        std::vector<Elf_Phdr> programHeaders;
+
+    public:
+        explicit ElfFile(const std::string &elf_filepath);
+
+        ElfFile() = default;
+
+        ~ElfFile() = default;
+
+        [[maybe_unused]] void printHeader(FILE *fp = stdout) const { printElfHeader(header, fp); }
+
+        [[maybe_unused]] void printProgramHeaders(FILE *fp = stdout) const {
+          elf::printElfProgramHeaders(programHeaders, fp);
+        }
+
+        [[maybe_unused]] void printProgramHeaderAt(int index, FILE *fp = stdout) const {
+          elf::printElfProgramHeaderAt(index, programHeaders.at(index), fp);
+        }
+    };
 
 
-[[maybe_unused]] void printElfHeader(const Elf_Ehdr &header, FILE *fp = stdout);
-
-[[nodiscard]] bool isElfFile(Elf_Ehdr &file);
-
-[[nodiscard]] Elf_Ehdr readElfHeaderFromFile(const std::string &path);
-
-
-[[maybe_unused]] void
-printElfProgramHeader(const Elf_Ehdr &header, const std::vector<Elf64_Phdr> &pHeaders, FILE *fp = stdout);
-
-[[nodiscard]] std::vector<Elf64_Phdr> readElfProgramHeadersFromFile(const Elf_Ehdr &header, const std::string &path);
+} // namespace elf
 
 #endif //C_BDD_ELF_READER_HPP
 

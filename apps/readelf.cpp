@@ -6,18 +6,17 @@
 
 #include "elf_reader.hpp"
 
+using namespace elf;
+
 int main(int argc, char **argv) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <elf-file|compiled-prog>" << std::endl;
     return 1;
   }
 
-  auto hdr = readElfHeaderFromFile(argv[1]);
-  printElfHeader(hdr);
-
-  auto pHeaders = readElfProgramHeadersFromFile(hdr, argv[1]);
-
-  printElfProgramHeader(hdr, pHeaders);
+  auto elf_file = ElfFile(argv[1]);
+  elf_file.printHeader();
+  elf_file.printProgramHeaders();
 
   return 0;
 }
