@@ -1,3 +1,3 @@
-add_executable(read_elf readelf.cpp)
-target_include_directories(read_elf PUBLIC "${INCLUDE_DIR}")
-target_link_libraries(read_elf PRIVATE LIB_ELF_READER)
+add_executable(readelf readelf.cpp)
+target_include_directories(readelf PUBLIC "${INCLUDE_DIR}")
+target_link_libraries(readelf PRIVATE LIB_ELF_READER)

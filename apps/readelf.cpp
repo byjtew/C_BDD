@@ -9,5 +9,8 @@ int main(int argc, char **argv) {
     std::cerr << "Usage: " << argv[0] << " <elf-file|compiled-prog>" << std::endl;
     return 1;
   }
+
+  auto hdr = readElfHeaderFromFile(argv[1]);
+  printElfHeader(hdr);
   return 0;
 }
