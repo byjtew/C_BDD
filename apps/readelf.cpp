@@ -4,6 +4,8 @@
 
 #include <iostream>
 
+#include "elf_reader.hpp"
+
 int main(int argc, char **argv) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <elf-file|compiled-prog>" << std::endl;
@@ -12,5 +14,10 @@ int main(int argc, char **argv) {
 
   auto hdr = readElfHeaderFromFile(argv[1]);
   printElfHeader(hdr);
+
+  auto pHeaders = readElfProgramHeadersFromFile(hdr, argv[1]);
+
+  printElfProgramHeader(hdr, pHeaders);
+
   return 0;
 }
