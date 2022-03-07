@@ -92,6 +92,134 @@ void ElfFile::printProgramHeaders(FILE *fp) const {
     printProgramHeaderAt(i, fp);
 }
 
+
+std::string ElfFile::getSectionTypeAsString(const Elf_Shdr &sHeader) {
+  switch (sHeader.sh_type) {
+    case SHT_PROGBITS:
+      return "Program data";
+    case SHT_SYMTAB:
+      return "Symbol table";
+    case SHT_STRTAB:
+      return "String table";
+    case SHT_RELA:
+      return "Relocation entries with addends";
+    case SHT_HASH:
+      return "Symbol hash table";
+    case SHT_DYNAMIC:
+      return "Dynamic linking information";
+    case SHT_NOTE:
+      return "Notes";
+    case SHT_NOBITS:
+      return "Program space with no data (bss)";
+    case SHT_REL:
+      return "Relocation entries, no addends";
+    case SHT_DYNSYM:
+      return "Dynamic linker symbol table";
+    default:
+      return "Unused";
+  }
+}
+
+std::string ElfFile::getSectionsNameAsString(const Elf_Shdr &sHeader) {
+  switch (sHeader.sh_name) {
+    case 1:
+      return ".interp";
+    case 2:
+      return ".note.gnu.build-id";
+    case 3:
+      return ".note.ABI-tag";
+    case 4:
+      return ".gnu.hash";
+    case 5:
+      return ".dynsym";
+    case 6:
+      return ".dynstr";
+    case 7:
+      return ".gnu.version";
+    case 8:
+      return ".gnu.version_r";
+    case 9:
+      return ".rel.dyn";
+    case 10:
+      return ".rel.plt";
+    case 11:
+      return ".init";
+    case 12:
+      return ".plt";
+    case 13:
+      return ".plt.got";
+    case 14:
+      return ".text";
+    case 15:
+      return ".fini";
+    case 16:
+      return ".rodata";
+    case 17:
+      return ".eh_frame_hdr";
+    case 18:
+      return ".eh_frame";
+    case 19:
+      return ".init_array";
+    case 20:
+      return ".fini_array";
+    case 21:
+      return ".dynamic";
+    case 22:
+      return ".got";
+    case 23:
+      return ".got.plt";
+    case 24:
+      return ".data";
+    case 25:
+      return ".bss";
+    case 26:
+      return ".comment";
+    case 27:
+      return ".symtab";
+    case 28:
+      return ".strtab";
+    case 29:
+      return ".shstrtab";
+    default:
+      return "";
+  }
+}
+
+void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
+  auto sHeader = sectionsHeaders.at(index);
+  fprintf
+      (fp,
+       "\n\tSection header (%d):\n"
+       "\t\t- Section name:                       %u (%s)\n"
+       "\t\t- Section type:                       %u (%s)\n"
+       "\t\t- Section flags:                      %lu (%s)\n"
+       "\t\t- Section virtual address:            0x%016lX\n"
+       "\t\t- Section file offset:                %lu\n"
+       "\t\t- Section size in bytes:              %lu\n"
+       "\t\t- Link to another section:            %u\n"
+       "\t\t- Additional section information:     %u\n"
+       "\t\t- Section alignment:                  %lu\n"
+       "\t\t- Entry size if section holds table:  %lu\n",
+       index,
+       sHeader.sh_name, getSectionsNameAsString(sHeader).c_str(),
+       sHeader.sh_type, getSectionTypeAsString(sHeader).c_str(),
+       sHeader.sh_flags, getFlagsAsString(sHeader.sh_flags).c_str(),
+       sHeader.sh_addr,
+       sHeader.sh_offset,
+       sHeader.sh_size,
+       sHeader.sh_link,
+       sHeader.sh_info,
+       sHeader.sh_addralign,
+       sHeader.sh_entsize
+      );
+}
+
+void ElfFile::printSectionsHeaders(FILE *fp) const {
+  for (int i = 0; i < sectionsHeaders.size(); i++)
+    printSectionHeaderAt(i, fp);
+}
+
+
 ElfFile::ElfFile(const std::string &elf_filepath) {
   std::ifstream input;
   input.open(elf_filepath);
@@ -114,6 +242,16 @@ ElfFile::ElfFile(const std::string &elf_filepath) {
   auto pHeadersPtr = (Elf_Phdr *) ((void *) pHeaders_data.data());
   if (pHeadersPtr == nullptr) throw std::invalid_argument("Null pointer: Elf program-headers");
   programHeaders = std::vector<Elf_Phdr>(pHeadersPtr, pHeadersPtr + header.e_phnum);
+  pHeaders_data.clear();
+
+  std::string sHeaders_data;
+  sHeaders_data.resize(header.e_shentsize * header.e_shnum);
+  input.seekg((long) header.e_shoff, std::ifstream::beg);
+  input.read(sHeaders_data.data(), (int) sHeaders_data.size());
+  auto sHeadersPtr = (Elf_Shdr *) ((void *) sHeaders_data.data());
+  if (sHeadersPtr == nullptr) throw std::invalid_argument("Null pointer: Elf sections-headers");
+  sectionsHeaders = std::vector<Elf_Shdr>(sHeadersPtr, sHeadersPtr + header.e_shnum);
+  sHeaders_data.clear();
 
   input.close();
 }

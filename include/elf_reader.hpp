@@ -13,11 +13,13 @@
 #define ARCHITECTURE 64
 using Elf_Ehdr = Elf64_Ehdr;
 using Elf_Phdr = Elf64_Phdr;
+using Elf_Shdr = Elf64_Shdr;
 
 #elif INTPTR_MAX == INT32_MAX // 32 BITS ARCHITECTURE
 #define ARCHITECTURE 32
 using Elf_Ehdr = Elf32_Ehdr;
 using Elf_Phdr = Elf32_Phdr;
+using Elf_Shdr = Elf32_Shdr;
 
 #endif
 
@@ -32,6 +34,15 @@ namespace elf {
     private:
         Elf_Ehdr header{};
         std::vector<Elf_Phdr> programHeaders;
+        std::vector<Elf_Shdr> sectionsHeaders;
+
+        /**
+        * @cite https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.sheader.html
+        * @param sectionHeader
+        */
+        static std::string getSectionTypeAsString(const Elf_Shdr &sHeader);
+
+        [[nodiscard]] static std::string getSectionsNameAsString(const Elf_Shdr &sHeader);
 
     public:
         explicit ElfFile(const std::string &elf_filepath);
@@ -46,9 +57,9 @@ namespace elf {
 
         [[maybe_unused]] void printProgramHeaderAt(int index, FILE *fp = stdout) const;
 
-        [[maybe_unused]] void printProgramHeaderAt(int index, FILE *fp = stdout) const {
-          elf::printElfProgramHeaderAt(index, programHeaders.at(index), fp);
-        }
+        [[maybe_unused]] void printSectionsHeaders(FILE *fp = stdout) const;
+
+        [[maybe_unused]] void printSectionHeaderAt(int index, FILE *fp = stdout) const;
     };
 
 

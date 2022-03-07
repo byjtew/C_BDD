@@ -17,6 +17,6 @@ int main(int argc, char **argv) {
   auto elf_file = ElfFile(argv[1]);
   elf_file.printHeader();
   elf_file.printProgramHeaders();
-
+  elf_file.printSectionsHeaders();
   return 0;
 }
