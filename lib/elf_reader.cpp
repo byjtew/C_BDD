@@ -10,13 +10,13 @@
 
 using namespace elf;
 
-void elf::printElfHeader(const Elf_Ehdr &header, FILE *fp) {
+void ElfFile::printHeader(FILE *fp) const {
   fprintf
       (fp,
-       "ELF%d file:\n"
-       "Header:\n"
-       "-------------------------\n"
-       "\n"
+       "ELF File Header:\nHeader:\n-----------------------------\n\n"
+       "\t- Object file typ:                    0x%016hX\n"
+       "\t- Architecture:                       0x%016hX\n"
+       "\t- Object file version:                0x%016X\n"
        "\t- Entry point virtual address:        0x%016lX\n"
        "\t- Program header table file offset:   %lu\n"
        "\t- Section header table file offset:   %lu\n"
@@ -27,7 +27,9 @@ void elf::printElfHeader(const Elf_Ehdr &header, FILE *fp) {
        "\t- Section header table entry size:    %hu\n"
        "\t- Section header table entry count:   %hu\n"
        "\t- Section header string table index:  %hu\n",
-       ARCHITECTURE,
+       header.e_type,
+       header.e_machine,
+       header.e_version,
        header.e_entry,
        header.e_phoff,
        header.e_shoff,
@@ -60,7 +62,8 @@ std::string getFlagsAsString(unsigned int flags) {
   return "---";
 }
 
-void elf::printElfProgramHeaderAt(int index, const Elf_Phdr &pHeader, FILE *fp) {
+void ElfFile::printProgramHeaderAt(int index, FILE *fp) const {
+  auto pHeader = programHeaders.at(index);
   fprintf
       (fp,
        "\n\tProgram header [%d]:\n"
@@ -68,6 +71,7 @@ void elf::printElfProgramHeaderAt(int index, const Elf_Phdr &pHeader, FILE *fp) 
        "\t\t- Segment flags:            %u (%s)\n"
        "\t\t- Segment file offset:      0x%016lX\n"
        "\t\t- Segment virtual address:  0x%016lX\n"
+       "\t\t- Segment physical address: 0x%016lX\n"
        "\t\t- Segment size in file:     %lu\n"
        "\t\t- Segment size in memory:   %lu\n"
        "\t\t- Segment alignment:        %lu\n",
@@ -76,17 +80,16 @@ void elf::printElfProgramHeaderAt(int index, const Elf_Phdr &pHeader, FILE *fp) 
        pHeader.p_flags, getFlagsAsString(pHeader.p_flags).c_str(),
        pHeader.p_offset,
        pHeader.p_vaddr,
+       pHeader.p_paddr,
        pHeader.p_filesz,
        pHeader.p_memsz,
        pHeader.p_align
       );
 }
 
-void elf::printElfProgramHeaders(const std::vector<Elf_Phdr> &pHeaders, FILE *fp) {
-  int index = 0;
-  std::for_each(pHeaders.cbegin(), pHeaders.cend(), [&index, fp](const Elf_Phdr &pHeader) {
-      printElfProgramHeaderAt(index++, pHeader, fp);
-  });
+void ElfFile::printProgramHeaders(FILE *fp) const {
+  for (int i = 0; i < programHeaders.size(); i++)
+    printProgramHeaderAt(i, fp);
 }
 
 ElfFile::ElfFile(const std::string &elf_filepath) {

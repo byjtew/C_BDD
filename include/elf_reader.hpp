@@ -26,14 +26,6 @@ namespace elf {
         ExecuteFlag = 1, WriteFlag = 2, ReadFlag = 4
     };
 
-    [[maybe_unused]] void printElfHeader(const Elf_Ehdr &header, FILE *fp);
-
-    [[maybe_unused]] void
-    printElfProgramHeaders(const std::vector<Elf64_Phdr> &pHeaders, FILE *fp = stdout);
-
-    [[maybe_unused]] void
-    printElfProgramHeaderAt(int index, const Elf64_Phdr &pHeader, FILE *fp = stdout);
-
     [[nodiscard]] bool isElfFile(Elf_Ehdr &header);
 
     class ElfFile {
@@ -48,11 +40,11 @@ namespace elf {
 
         ~ElfFile() = default;
 
-        [[maybe_unused]] void printHeader(FILE *fp = stdout) const { printElfHeader(header, fp); }
+        [[maybe_unused]] void printHeader(FILE *fp = stdout) const;
 
-        [[maybe_unused]] void printProgramHeaders(FILE *fp = stdout) const {
-          elf::printElfProgramHeaders(programHeaders, fp);
-        }
+        [[maybe_unused]] void printProgramHeaders(FILE *fp = stdout) const;
+
+        [[maybe_unused]] void printProgramHeaderAt(int index, FILE *fp = stdout) const;
 
         [[maybe_unused]] void printProgramHeaderAt(int index, FILE *fp = stdout) const {
           elf::printElfProgramHeaderAt(index, programHeaders.at(index), fp);
