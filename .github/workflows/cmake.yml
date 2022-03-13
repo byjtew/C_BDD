@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
     # install dependencies
-    - name: Install TBB
+    - name: Install-TBB
       run: sudo apt-get update && sudo apt-get install -yq libtbb-dev
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
