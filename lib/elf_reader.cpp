@@ -87,6 +87,49 @@ void ElfFile::printProgramHeaderAt(int index, FILE *fp) const {
       );
 }
 
+void ElfFile::printSymbolEntry(unsigned index, const Elf_SymRef &sym, const Elf_Shdr &sHdr, FILE *fp) {
+  fprintf
+      (fp,
+       "    ### Symbol (%u):\n"
+       "    \n"
+       "        - Symbol name:                 %u (%s)\n"
+       "        - Symbol type:                 %s\n"
+       "        - Symbol bindings:             %s\n"
+       "        - Section table index:         %hu\n"
+       "        - Symbol value:                0x%016lX\n"
+       "        - Size of object:              %lu\n"
+       "        - Other:                       %hhu\n"
+       "    \n",
+       index,
+       sym.st_name,
+       getSymbolName(sHdr, sym).c_str(),
+       getSymbolTypeAsString(sym).c_str(),
+       getSymbolBindingAsString(sym).c_str(),
+       sym.st_shndx,
+       sym.st_value,
+       sym.st_size,
+       sym.st_other
+      );
+}
+
+Elf_SymRef
+ElfFile::getSymbolSectionAt(unsigned int index, unsigned offset) {
+  return *((Elf_SymRef *) (getSectionDataPtrAt(index) + offset));
+}
+
+void ElfFile::printSymbolEntries(FILE *fp) {
+  auto headers = getSectionHeaderIndexesByType(Elf_SectionTypeLinkerSymbolTable);
+  unsigned index = 0;
+  std::for_each(headers.cbegin(), headers.cend(), [fp, &index, this](const unsigned &e) {
+      Elf_Shdr sHdr = sectionsHeaders.at(e);
+      for (unsigned i = 0; i < getSymbolCount(sHdr); i++)
+        printSymbolEntry(i, getSymbolSectionAt(e, i * sHdr.sh_entsize), sHdr, fp);
+      index += 1;
+  });
+
+
+}
+
 void ElfFile::printProgramHeaders(FILE *fp) const {
   for (int i = 0; i < programHeaders.size(); i++)
     printProgramHeaderAt(i, fp);
@@ -120,72 +163,7 @@ std::string ElfFile::getSectionTypeAsString(const Elf_Shdr &sHeader) {
   }
 }
 
-std::string ElfFile::getSectionsNameAsString(const Elf_Shdr &sHeader) {
-  switch (sHeader.sh_name) {
-    case 1:
-      return ".interp";
-    case 2:
-      return ".note.gnu.build-id";
-    case 3:
-      return ".note.ABI-tag";
-    case 4:
-      return ".gnu.hash";
-    case 5:
-      return ".dynsym";
-    case 6:
-      return ".dynstr";
-    case 7:
-      return ".gnu.version";
-    case 8:
-      return ".gnu.version_r";
-    case 9:
-      return ".rel.dyn";
-    case 10:
-      return ".rel.plt";
-    case 11:
-      return ".init";
-    case 12:
-      return ".plt";
-    case 13:
-      return ".plt.got";
-    case 14:
-      return ".text";
-    case 15:
-      return ".fini";
-    case 16:
-      return ".rodata";
-    case 17:
-      return ".eh_frame_hdr";
-    case 18:
-      return ".eh_frame";
-    case 19:
-      return ".init_array";
-    case 20:
-      return ".fini_array";
-    case 21:
-      return ".dynamic";
-    case 22:
-      return ".got";
-    case 23:
-      return ".got.plt";
-    case 24:
-      return ".data";
-    case 25:
-      return ".bss";
-    case 26:
-      return ".comment";
-    case 27:
-      return ".symtab";
-    case 28:
-      return ".strtab";
-    case 29:
-      return ".shstrtab";
-    default:
-      return "";
-  }
-}
-
-void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
+void ElfFile::printSectionHeaderAt(int index, FILE *fp) {
   auto sHeader = sectionsHeaders.at(index);
   fprintf
       (fp,
@@ -201,7 +179,7 @@ void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
        "\t\t- Section alignment:                  %lu\n"
        "\t\t- Entry size if section holds table:  %lu\n",
        index,
-       sHeader.sh_name, getSectionsNameAsString(sHeader).c_str(),
+       sHeader.sh_name, getSectionName(sHeader).c_str(),
        sHeader.sh_type, getSectionTypeAsString(sHeader).c_str(),
        sHeader.sh_flags, getFlagsAsString(sHeader.sh_flags).c_str(),
        sHeader.sh_addr,
@@ -214,7 +192,7 @@ void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
       );
 }
 
-void ElfFile::printSectionsHeaders(FILE *fp) const {
+void ElfFile::printSectionsHeaders(FILE *fp) {
   for (int i = 0; i < sectionsHeaders.size(); i++)
     printSectionHeaderAt(i, fp);
 }
@@ -225,33 +203,145 @@ ElfFile::ElfFile(const std::string &elf_filepath) {
   input.open(elf_filepath);
   if (input.fail()) throw std::invalid_argument("Bad input: file.open() failed");
 
+#pragma region Elf Header
   std::string header_data;
   header_data.resize(64);
   input.read(header_data.data(), (int) header_data.size());
-  auto headerPtr = (Elf_Ehdr *) ((void *) header_data.data());
+  auto headerPtr = (Elf_Ehdr *) ((addr_t) header_data.data());
   if (headerPtr == nullptr) throw std::invalid_argument("Null pointer: Elf header");
   header = *headerPtr;
   header_data.clear();
+#pragma endregion
 
-  if (!::isElfFile(header)) throw std::invalid_argument("Not an ELF file");
+  if (!isElfFile(header)) throw std::invalid_argument("Not an ELF file");
 
+#pragma region Program Deaders
   std::string pHeaders_data;
   pHeaders_data.resize(header.e_phentsize * header.e_phnum);
   input.seekg((long) header.e_phoff, std::ifstream::beg);
   input.read(pHeaders_data.data(), (int) pHeaders_data.size());
-  auto pHeadersPtr = (Elf_Phdr *) ((void *) pHeaders_data.data());
+  auto pHeadersPtr = (Elf_Phdr *) ((addr_t) pHeaders_data.data());
   if (pHeadersPtr == nullptr) throw std::invalid_argument("Null pointer: Elf program-headers");
   programHeaders = std::vector<Elf_Phdr>(pHeadersPtr, pHeadersPtr + header.e_phnum);
   pHeaders_data.clear();
+#pragma endregion
 
+#pragma region Section Headers
   std::string sHeaders_data;
   sHeaders_data.resize(header.e_shentsize * header.e_shnum);
   input.seekg((long) header.e_shoff, std::ifstream::beg);
   input.read(sHeaders_data.data(), (int) sHeaders_data.size());
-  auto sHeadersPtr = (Elf_Shdr *) ((void *) sHeaders_data.data());
+  auto sHeadersPtr = (Elf_Shdr *) ((addr_t) sHeaders_data.data());
   if (sHeadersPtr == nullptr) throw std::invalid_argument("Null pointer: Elf sections-headers");
   sectionsHeaders = std::vector<Elf_Shdr>(sHeadersPtr, sHeadersPtr + header.e_shnum);
   sHeaders_data.clear();
+#pragma endregion
+
+#pragma region Sections data
+  std::vector<char> buffer;
+  std::for_each(sectionsHeaders.cbegin(), sectionsHeaders.cend(), [&buffer, &input, this](const Elf_Shdr &sHdr) {
+      buffer.resize(sHdr.sh_size);
+      input.seekg((long) sHdr.sh_offset, std::ifstream::beg);
+      input.read(buffer.data(), (int) buffer.size());
+      sectionsData.push_back(buffer);
+  });
+  buffer.clear();
+#pragma endregion
 
   input.close();
+
+  printSymbolEntries();
 }
+
+
+Elf_Shdr ElfFile::getSectionHeaderByType(Elf_SectionType type) const {
+  return *std::find_if(sectionsHeaders.cbegin(), sectionsHeaders.cend(), [type](const Elf_Shdr &each) {
+      return each.sh_type == type;
+  });
+}
+
+std::vector<unsigned> ElfFile::getSectionHeaderIndexesByType(Elf_SectionType type) const {
+  std::vector<unsigned> headers;
+  unsigned current = 0;
+  std::for_each(sectionsHeaders.cbegin(), sectionsHeaders.cend(), [&current, &headers, type](const Elf_Shdr &each) {
+      if (each.sh_type == type) headers.push_back(current);
+      current++;
+  });
+  return headers;
+}
+
+std::vector<Elf_Shdr> ElfFile::getSectionsHeaderByType(Elf_SectionType type) const {
+  std::vector<Elf_Shdr> headers;
+  std::for_each(sectionsHeaders.cbegin(), sectionsHeaders.cend(), [&headers, type](const Elf_Shdr &each) {
+      if (each.sh_type == type) headers.push_back(each);
+  });
+  return headers;
+}
+
+std::string ElfFile::getSymbolTypeAsString(const Elf_SymRef &sym) {
+  switch (sym.st_info & 0x0F) {
+    case Elf_SymbolTypeNone:
+      return "No type specified";
+    case Elf_SymbolTypeDataObject:
+      return "Data object";
+    case Elf_SymbolTypeFunctionEntryPoint:
+      return "Function entry point";
+    case Elf_SymbolTypeSection:
+      return "Symbol associated with a section";
+    case Elf_SymbolTypeFile:
+      return "Source file associated with the object file";
+    default:
+      return "NULL";
+  }
+}
+
+std::string ElfFile::getNameFromStringTable(unsigned strTableIndex, unsigned offset) {
+  auto data_ptr = getSectionDataPtrAt(strTableIndex);
+  if (data_ptr == nullptr) return "Unnamed";
+  return data_ptr + offset;
+}
+
+std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) {
+  return getNameFromStringTable(header.e_shstrndx, sHeader.sh_name);
+}
+
+std::string ElfFile::getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) {
+  return getNameFromStringTable(sHeader.sh_link, sym.st_name);
+}
+
+std::string ElfFile::getSymbolBindingAsString(const Elf_SymRef &sym) {
+  switch (sym.st_info) {
+    case Elf_SymbolBindingLocal:
+      return "Local";
+    case Elf_SymbolBindingGlobal:
+      return "Global";
+    case Elf_SymbolBindingWeak:
+      return "Weak";
+    default:
+      return "NULL";
+  }
+}
+
+char *ElfFile::getSectionDataPtrAt(unsigned int index) {
+  if (index >= sectionsData.size()) return nullptr;
+  return sectionsData.at(index).data();
+}
+
+// TODO: ElfFile::getFunctionAddress
+addr_t ElfFile::getFunctionAddress(const std::string &fct_name) {
+  /*auto it = std::find_if(symbolTable.cbegin(), symbolTable.cend(), [fct_name, this](auto const &each) {
+      return
+          getSymbolName(getSectionHeaderByType(Elf_SectionTypeLinkerSymbolTable), each) ==
+          fct_name;
+  });
+  if (it == symbolTable.cend())
+    return nullptr;
+  return (addr_t) (getSectionDataPtrAt(it->st_shndx) + it->st_value);*/
+  return nullptr;
+}
+
+unsigned ElfFile::getSymbolCount(const Elf_Shdr &sHdr) {
+  return (unsigned) sHdr.sh_size / sHdr.sh_entsize;
+}
+
+

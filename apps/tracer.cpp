@@ -11,17 +11,48 @@
 
 void command_loop(TracedProgram &traced) {
   bool force_end = false;
-  std::string choice;
+  std::string choice, choice_param;
   choice.reserve(20);
   TracedProgram::processPrint("Debug ready.\n");
   do {
+    choice.clear();
+    choice_param.clear();
     if (traced.isExiting())
       TracedProgram::processPrint("The program exited normally.\n");
+    else if (traced.isTrappedAtBreakpoint()) {
+      TracedProgram::processPrint("The program hit a breakpoint.\n");
+    }
+
     TracedProgram::processPrint("$ : ");
     TracedProgram::processScan(choice);
+
     if (choice == "run") {
-      TracedProgram::processPrint("Running program.\n");
-      traced.ptraceContinue();
+      if (traced.isDead() || traced.isExiting()) {
+        TracedProgram::processPrint("Re-run the program [Y/n]: ");
+        TracedProgram::processScan(choice);
+        if (choice_param == "y" || choice_param == "Y")
+          traced.rerun();
+
+      } else {
+        TracedProgram::processPrint("Continuing program.\n");
+        traced.ptraceContinue();
+      }
+    } else if (choice.starts_with("bp")) {
+      TracedProgram::processScan(choice_param);
+
+      if (choice_param.starts_with("0x")) { // Hex choice
+        if (!traced.breakpointAtAddress(choice_param))
+          TracedProgram::processPerror("Breakpoint[%s] failed: wrong address.\n");
+        else
+          TracedProgram::processPrint("Breakpoint[%s] placed.\n", choice_param.c_str());
+      } else { // Name choice
+        if (!traced.breakpointAtFunction(choice_param))
+          TracedProgram::processPerror("Breakpoint[%s] failed: function does not exists.\n");
+        else
+          TracedProgram::processPrint("Breakpoint[%s] placed.\n", choice_param.c_str());
+      }
+
+
     } else if (choice == "step") {
       TracedProgram::processPrint("Stepping program.\n");
       traced.ptraceStep();
@@ -46,6 +77,7 @@ int main(int argc, char **argv) {
   for (size_t i = 2; i < argc; i++)
     params.emplace_back(argv[i]);
   auto traced = TracedProgram(std::string(argv[1]), params);
-  command_loop(traced);
+  //command_loop(traced);
+  traced.stop();
   return 0;
 }

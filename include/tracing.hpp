@@ -25,9 +25,43 @@
 #include <mutex>
 #include <sys/mman.h>
 #include <pthread.h>
-#include <queue>
 #include <stack>
+#include <ostream>
+#include <sys/ptrace.h>
+#include <execution>
+#include <iostream>
+#include <cstdio>
+#include <pthread.h>
+#include <sys/mman.h>
+#include <cstdarg>
+#include <fcntl.h>
+
 #include "elf_reader.hpp"
+
+using instr_t = long;
+
+
+class Breakpoint {
+private:
+    pid_t program_pid;
+    addr_t address;
+    instr_t original;
+public:
+    Breakpoint(pid_t pid, const addr_t &addr);
+
+    bool enable();
+
+    void disable();
+
+    [[nodiscard]] addr_t getAddress() const {
+      return address;
+    }
+
+    [[nodiscard]] instr_t getOriginal() const {
+      return original;
+    }
+};
+
 
 #define MMAP_NAME         "/tmp/mmap_bdd_stdoutmutex"
 
@@ -37,11 +71,14 @@ typedef struct debug_synchronisation {
 
 class TracedProgram {
 private:
+    std::string elf_file_path;
     inline static debug_synchronisation_t *debug_synchronisation_map;
     inline static pid_t bdd_pid;
     elf::ElfFile elf_file;
     pid_t traced_pid;
     int cached_status = 0;
+
+    std::map<addr_t, Breakpoint> breakpointsMap;
 
     static void lockPrint() {
       pthread_mutex_lock(&debug_synchronisation_map->print_mutex);
@@ -51,9 +88,9 @@ private:
       pthread_mutex_unlock(&debug_synchronisation_map->print_mutex);
     }
 
-    void initChild(const std::string &exec_path, std::vector<char *> &parameters);
+    void initChild(std::vector<char *> &parameters);
 
-    void initBDD(const std::string &exec_path);
+    void initBDD();
 
     void getProcessStatus();
 
@@ -68,19 +105,31 @@ public:
       munmap(debug_synchronisation_map, sizeof(debug_synchronisation_t));
     }
 
+#pragma region breakpoints
+
+    [[nodiscard]] bool breakpointAtFunction(const std::string &fct_name);
+
+    [[nodiscard]] addr_t getIP() const;
+
+#pragma endregion breakpoints
+
     void ptraceContinue();
 
     void ptraceStep();
 
-    bool isDead() const;
+    [[nodiscard]] bool isDead() const;
 
-    bool isAlive() const;
+    [[nodiscard]] bool isAlive() const;
 
-    bool isStopped() const;
+    [[nodiscard]] bool isStopped() const;
 
-    bool isTrapped() const;
+    [[nodiscard]] bool isTrapped() const;
 
     void stop() const;
+
+    void rerun(std::vector<char *> &args);
+
+    void rerun();
 
     static void processPrint(const std::string &formatformat, ...);
 
@@ -89,9 +138,23 @@ public:
 
     void showStatus() const;
 
-    std::string getTrapName() const;
+    [[nodiscard]] std::string getTrapName() const;
 
-    bool isExiting() const;
+    [[nodiscard]] bool isExiting() const;
+
+    void setBreakpoint(Breakpoint &bp);
+
+    [[nodiscard]] bool isTrappedAtBreakpoint() const;
+
+    static void initializePrintExclusion();
+
+    void clearLoadedElf();
+
+    static void processPerror(const std::string &format, ...);
+
+    bool breakpointAtAddress(const std::string &strAddress);
+
+    bool breakpointAtAddress(addr_t address);
 };
 
 #endif //C_BDD_TRACING_HPP

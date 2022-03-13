@@ -1,44 +1,40 @@
 //
 // Created by byjtew on 12/03/2022.
 //
-#include <ostream>
-#include <sys/ptrace.h>
-#include <execution>
-#include <iostream>
-#include <stdio.h>
-#include <pthread.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <cassert>
-#include <fstream>
-#include <cstdarg>
-#include <fcntl.h>
+
 
 #include "tracing.hpp"
 
-void TracedProgram::initChild(const std::string &exec_path, std::vector<char *> &parameters) {
+void TracedProgram::initChild(std::vector<char *> &parameters) {
   int status;
   ptrace(PTRACE_TRACEME, &status, 0);
-  processPrint("start.\n");
+  processPrint("ready, pid=%u\n", getpid());
   parameters.push_back(nullptr);
-  execve(exec_path.c_str(), parameters.data(), nullptr);
+  execve(elf_file_path.c_str(), parameters.data(), nullptr);
   processPrint("exit.\n");
 }
 
-void TracedProgram::initBDD(const std::string &exec_path) {
+void TracedProgram::initBDD() {
   int status;
   ptrace(PTRACE_ATTACH, traced_pid);
   waitpid(traced_pid, &status, 0);
   ptrace(PTRACE_SETOPTIONS, traced_pid, 0, PTRACE_O_TRACEEXIT);
-  elf_file = elf::ElfFile(exec_path);
+  elf_file = elf::ElfFile(elf_file_path);
   processPrint("ready.\n");
   ptraceContinue();
 }
 
 
 TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &parameters) {
+  elf_file_path = exec_path;
   bdd_pid = getpid();
 
+  initializePrintExclusion();
+
+  rerun(parameters);
+}
+
+void TracedProgram::initializePrintExclusion() {
   unlink(MMAP_NAME);
   int fd = open(MMAP_NAME, O_CREAT | O_RDWR, 00600);
   ftruncate(fd, sizeof(debug_synchronisation_t));
@@ -59,32 +55,17 @@ TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &
   rc = pthread_mutex_init(&debug_synchronisation_map->print_mutex, &mutexattr);
   if (rc != 0)
     throw std::invalid_argument("pthread_mutex_init");
-
-  do {
-    traced_pid = fork();
-    switch (traced_pid) {
-      case -1:
-        std::cerr << "fork_error" << std::endl;
-        break;
-      case 0:
-        initChild(exec_path, parameters);
-        break;
-      default:
-        initBDD(exec_path);
-        break;
-    }
-  } while (traced_pid == -1 && errno == EAGAIN);
 }
 
 
 void TracedProgram::ptraceContinue() {
-  int rc = ptrace(PTRACE_CONT, traced_pid, 0, 0);
+  long rc = ptrace(PTRACE_CONT, traced_pid, 0, 0);
   TracedProgram::processPrint("ptraceContinue(): %d\n", rc);
   getProcessStatus();
 }
 
 void TracedProgram::ptraceStep() {
-  int rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
+  long rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
   TracedProgram::processPrint("ptraceStep(): %d\n", rc);
   getProcessStatus();
 }
@@ -93,8 +74,8 @@ void TracedProgram::showStatus() const {
   processPrint("=================\n");
   processPrint("isAlive(): %d\n", isAlive());
   processPrint("isStopped(): %d\n", isStopped());
+  processPrint("isTrapped(): %d\n", isTrapped());
   processPrint("isExiting(): %d\n", isExiting());
-  //processPrint("isAlive(): %s\n", isAlive());
   processPrint("=================\n");
 }
 
@@ -102,6 +83,7 @@ void TracedProgram::getProcessStatus() {
   TracedProgram::processPrint("> getProcessStatus()\n");
   waitpid(traced_pid, &cached_status, 0);
   TracedProgram::processPrint("< getProcessStatus(): %d\n", cached_status);
+  auto rc = getIP();
   showStatus();
 }
 
@@ -135,6 +117,8 @@ std::string TracedProgram::getTrapName() const {
 }
 
 void TracedProgram::stop() const {
+  if (isDead()) return;
+  processPrint("Killing the program.\n");
   kill(traced_pid, SIGKILL);
 }
 
@@ -157,8 +141,57 @@ void TracedProgram::processPrint(const std::string &format, ...) {
   unlockPrint();
 }
 
+void TracedProgram::processPerror(const std::string &format, ...) {
+  bool child = getpid() != bdd_pid;
+  std::string reformat;
+  if (format.ends_with("\n") && format.length() > 1)
+    reformat.append(child ? "[Child]: " : "[BDD]: ");
+  reformat.append(format);
+
+  lockPrint();
+  va_list args;
+  va_start(args, format.data());
+  fflush(stdout);
+  std::string strbuf;
+  vfprintf(stderr, reformat.c_str(), args);
+  va_end(args);
+  unlockPrint();
+}
+
 void TracedProgram::processScan(std::string &value) {
   lockPrint();
   std::cin >> value;
   unlockPrint();
 }
+
+void TracedProgram::rerun(std::vector<char *> &parameters) {
+  if (isAlive()) stop();
+  clearLoadedElf();
+  do {
+    traced_pid = fork();
+    switch (traced_pid) {
+      case -1:
+        std::cerr << "fork_error" << std::endl;
+        break;
+      case 0:
+        initChild(parameters);
+        break;
+      default:
+        initBDD();
+        break;
+    }
+  } while (traced_pid == -1 && errno == EAGAIN);
+}
+
+void TracedProgram::rerun() {
+  std::vector<char *> args_empty;
+  rerun(args_empty);
+}
+
+void TracedProgram::clearLoadedElf() {
+  // TODO: Well...
+}
+
+
+
+
