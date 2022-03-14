@@ -36,14 +36,14 @@ bool TracedProgram::breakpointAtAddress(addr_t address) {
 }
 
 bool TracedProgram::breakpointAtAddress(const std::string &strAddress) {
-
   return breakpointAtAddress((addr_t) strAddress.data());
 }
 
 bool TracedProgram::breakpointAtFunction(const std::string &fct_name) {
+  auto prog_offset = getTracedProgExecAddress();
   auto addr = elf_file.getFunctionAddress(fct_name);
-  if (addr == nullptr) return false;
-  return breakpointAtAddress(addr);
+  if (addr == 0) return false;
+  return breakpointAtAddress(addr + prog_offset);
 
 }
 

@@ -126,8 +126,6 @@ void ElfFile::printSymbolEntries(FILE *fp) {
         printSymbolEntry(i, getSymbolSectionAt(e, i * sHdr.sh_entsize), sHdr, fp);
       index += 1;
   });
-
-
 }
 
 void ElfFile::printProgramHeaders(FILE *fp) const {
@@ -329,15 +327,19 @@ char *ElfFile::getSectionDataPtrAt(unsigned int index) {
 
 // TODO: ElfFile::getFunctionAddress
 addr_t ElfFile::getFunctionAddress(const std::string &fct_name) {
-  /*auto it = std::find_if(symbolTable.cbegin(), symbolTable.cend(), [fct_name, this](auto const &each) {
-      return
-          getSymbolName(getSectionHeaderByType(Elf_SectionTypeLinkerSymbolTable), each) ==
-          fct_name;
-  });
-  if (it == symbolTable.cend())
-    return nullptr;
-  return (addr_t) (getSectionDataPtrAt(it->st_shndx) + it->st_value);*/
-  return nullptr;
+  auto symbolHeaders = getSectionHeaderIndexesByType(Elf_SectionTypeLinkerSymbolTable);
+  for (const auto &e: symbolHeaders) {
+    Elf_Shdr sHdr = sectionsHeaders.at(e);
+    for (unsigned i = 0; i < getSymbolCount(sHdr); i++) {
+      Elf_SymRef symbolSectionData = getSymbolSectionAt(e, i * sHdr.sh_entsize);
+      auto name = getSymbolName(sHdr, symbolSectionData);
+      if (name != fct_name) continue;
+      fprintf(stderr, "Header addr: 0x%016lX\n", header.e_entry);
+      fprintf(stderr, "Full addr: 0x%016lX\n", header.e_entry + symbolSectionData.st_value);
+      return reinterpret_cast<addr_t>(symbolSectionData.st_value);
+    }
+  }
+  return 0;
 }
 
 unsigned ElfFile::getSymbolCount(const Elf_Shdr &sHdr) {

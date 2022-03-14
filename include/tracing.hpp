@@ -155,6 +155,8 @@ public:
     bool breakpointAtAddress(const std::string &strAddress);
 
     bool breakpointAtAddress(addr_t address);
+
+    addr_t getTracedProgExecAddress() const;
 };
 
 #endif //C_BDD_TRACING_HPP

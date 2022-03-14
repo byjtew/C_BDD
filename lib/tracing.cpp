@@ -2,7 +2,7 @@
 // Created by byjtew on 12/03/2022.
 //
 
-
+#include <fstream>
 #include "tracing.hpp"
 
 void TracedProgram::initChild(std::vector<char *> &parameters) {
@@ -190,6 +190,28 @@ void TracedProgram::rerun() {
 
 void TracedProgram::clearLoadedElf() {
   // TODO: Well...
+}
+
+addr_t TracedProgram::getTracedProgExecAddress() const {
+  std::string map_path;
+  map_path.resize(24);
+  snprintf(map_path.data(), map_path.size(), "/proc/%d/maps", traced_pid);
+  std::ifstream input(map_path);
+  if (input.fail())
+    throw std::invalid_argument("Bad input: TracedProgram::getTracedProgExecAddress(): file.open() failed");
+  std::string buffer;
+  while (getline(input, buffer)) {
+    auto first_space = buffer.find(' ');
+    auto exec_flag = buffer.at(first_space + 3);
+    std::cout << "Exec is: " << exec_flag << std::endl;
+    if (exec_flag != 'x') continue;
+    auto first_hyphen = buffer.find('-');
+    auto ram_address = buffer.substr(0, first_hyphen);
+    ram_address.insert(0, "0x");
+    std::cout << "RAM addr: " << ram_address << std::endl;
+    return strtoul(ram_address.c_str(), (char **) 0, 0);
+  }
+  return 0;
 }
 
 

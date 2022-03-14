@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
   for (size_t i = 2; i < argc; i++)
     params.emplace_back(argv[i]);
   auto traced = TracedProgram(std::string(argv[1]), params);
-  //command_loop(traced);
+  command_loop(traced);
   traced.stop();
   return 0;
 }
