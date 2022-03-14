@@ -14,11 +14,21 @@ bool Breakpoint::enable() {
     TracedProgram::processPerror("Breakpoint::enable() [0x%016lX]: ptrace error.\n", address);
     return false;
   }
+  enabled = true;
   return true;
 }
 
-void Breakpoint::disable() {
-  ptrace(PTRACE_POKETEXT, program_pid, address, original);
+bool Breakpoint::disable() {
+  if (ptrace(PTRACE_POKETEXT, program_pid, address, original)) {
+    TracedProgram::processPerror("Breakpoint::enable() [0x%016lX]: ptrace error.\n", address);
+    return false;
+  }
+  enabled = false;
+  return true;
+}
+
+bool Breakpoint::isEnabled() const {
+  return enabled;
 }
 
 

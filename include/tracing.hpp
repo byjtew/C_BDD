@@ -43,15 +43,18 @@ using instr_t = long;
 
 class Breakpoint {
 private:
+    bool enabled = false;
     pid_t program_pid;
     addr_t address;
     instr_t original;
 public:
+    bool isEnabled() const;
+
     Breakpoint(pid_t pid, const addr_t &addr);
 
     bool enable();
 
-    void disable();
+    bool disable();
 
     [[nodiscard]] addr_t getAddress() const {
       return address;
