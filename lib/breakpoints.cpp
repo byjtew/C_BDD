@@ -51,7 +51,9 @@ bool TracedProgram::breakpointAtAddress(const std::string &strAddress) {
 
 bool TracedProgram::breakpointAtFunction(const std::string &fct_name) {
   auto prog_offset = getTracedProgExecAddress();
+  processPrint("RAM offset: 0x%016lX\n", prog_offset);
   auto addr = elf_file.getFunctionAddress(fct_name);
+  processPrint("addr value: 0x%016lX\n", addr);
   if (addr == 0) return false;
   return breakpointAtAddress(addr + prog_offset);
 

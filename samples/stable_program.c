@@ -3,8 +3,6 @@
 //
 
 #include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
 
 void func() {
   printf("Printing from a function: [0x%016lX]\n", func);

@@ -247,8 +247,6 @@ ElfFile::ElfFile(const std::string &elf_filepath) {
 #pragma endregion
 
   input.close();
-
-  printSymbolEntries();
 }
 
 
