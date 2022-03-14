@@ -326,7 +326,6 @@ char *ElfFile::getSectionDataPtrAt(unsigned int index) {
   return sectionsData.at(index).data();
 }
 
-// TODO: ElfFile::getFunctionAddress
 addr_t ElfFile::getFunctionAddress(const std::string &fct_name) {
   auto symbolHeaders = getSectionHeaderIndexesByType(Elf_SectionTypeLinkerSymbolTable);
   for (const auto &e: symbolHeaders) {
