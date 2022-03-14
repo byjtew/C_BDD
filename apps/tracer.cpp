@@ -41,7 +41,7 @@ void command_loop(TracedProgram &traced) {
       TracedProgram::processScan(choice_param);
 
       if (choice_param.starts_with("0x")) { // Hex choice
-        if (!traced.breakpointAtAddress(choice_param))
+        if (!traced.breakpointAtAddress(strtoul(choice_param.c_str(), (char **) 0, 0)))
           TracedProgram::processPerror("Breakpoint[%s] failed: wrong address.\n");
         else
           TracedProgram::processPrint("Breakpoint[%s] placed.\n", choice_param.c_str());
