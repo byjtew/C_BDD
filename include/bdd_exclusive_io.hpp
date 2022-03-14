@@ -5,6 +5,8 @@
 #ifndef C_BDD_BDD_EXCLUSIVE_IO_HPP
 #define C_BDD_BDD_EXCLUSIVE_IO_HPP
 
+#pragma GCC diagnostic ignored "-Wformat-security"
+
 #define EXCLUSIVE_IO_MMAP_NAME "/tmp/mmap_bdd_stdoutmutex"
 
 #include <fstream>
@@ -71,7 +73,7 @@ private:
       // Using C formatting instead of LibFMT.
       std::string buffer;
       buffer.resize(rt_fmt_str.length() + 132);
-      auto size = std::sprintf(buffer.data(), rt_fmt_str.data(), std::forward<Args>(args)...);
+      auto size = std::sprintf(buffer.data(), rt_fmt_str.data(), args...);
       buffer.resize(size);
       return buffer;
     }
@@ -82,7 +84,7 @@ private:
                  Args &&... args) {
       lockPrint();
       out << "\033[" << color << "m" << (isParent() ? "[BDD]: " : "[Child]: ")
-          << formatArgs(rt_fmt_str, std::forward<Args>(args)...) << "\033[0m" << std::flush;
+          << formatArgs(rt_fmt_str, args...) << "\033[0m" << std::flush;
       unlockPrint();
     }
 
