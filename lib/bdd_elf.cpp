@@ -6,7 +6,9 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "elf_reader.hpp"
+#include <execution>
+
+#include "bdd_elf.hpp"
 
 using namespace elf;
 
@@ -199,7 +201,7 @@ void ElfFile::printSectionsHeaders(FILE *fp) {
 ElfFile::ElfFile(const std::string &elf_filepath) {
   std::ifstream input;
   input.open(elf_filepath);
-  if (input.fail()) throw std::invalid_argument("Bad input: file.open() failed");
+  if (input.fail()) throw std::invalid_argument("Bad input: file.initialize() failed");
 
 #pragma region Elf Header
   std::string header_data;
@@ -251,9 +253,10 @@ ElfFile::ElfFile(const std::string &elf_filepath) {
 
 
 Elf_Shdr ElfFile::getSectionHeaderByType(Elf_SectionType type) const {
-  return *std::find_if(sectionsHeaders.cbegin(), sectionsHeaders.cend(), [type](const Elf_Shdr &each) {
-      return each.sh_type == type;
-  });
+  return *std::find_if(std::execution::par, sectionsHeaders.cbegin(), sectionsHeaders.cend(),
+                       [type](const Elf_Shdr &each) {
+                           return each.sh_type == type;
+                       });
 }
 
 std::vector<unsigned> ElfFile::getSectionHeaderIndexesByType(Elf_SectionType type) const {
@@ -332,9 +335,7 @@ addr_t ElfFile::getFunctionAddress(const std::string &fct_name) {
       Elf_SymRef symbolSectionData = getSymbolSectionAt(e, i * sHdr.sh_entsize);
       auto name = getSymbolName(sHdr, symbolSectionData);
       if (name != fct_name) continue;
-      fprintf(stderr, "Header addr: 0x%016lX\n", header.e_entry);
-      fprintf(stderr, "Full addr: 0x%016lX\n", header.e_entry + symbolSectionData.st_value);
-      return reinterpret_cast<addr_t>(symbolSectionData.st_value);
+      return symbolSectionData.st_value;
     }
   }
   return 0;

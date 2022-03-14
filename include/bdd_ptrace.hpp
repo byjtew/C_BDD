@@ -2,8 +2,8 @@
 // Created by byjtew on 12/03/2022.
 //
 
-#ifndef C_BDD_TRACING_HPP
-#define C_BDD_TRACING_HPP
+#ifndef C_BDD_BDD_PTRACE_HPP
+#define C_BDD_BDD_PTRACE_HPP
 
 #define INT3 0xCC
 
@@ -22,25 +22,19 @@
 #include <sys/wait.h>
 #include <sys/reg.h>
 #include <vector>
-#include <mutex>
-#include <sys/mman.h>
-#include <pthread.h>
 #include <stack>
 #include <ostream>
 #include <sys/ptrace.h>
 #include <execution>
-#include <iostream>
 #include <cstdio>
-#include <pthread.h>
-#include <sys/mman.h>
 #include <cstdarg>
 #include <fcntl.h>
 #include <fstream>
 
-#include "elf_reader.hpp"
+#include "bdd_elf.hpp"
+#include "bdd_exclusive_io.hpp"
 
 using instr_t = long;
-
 
 class Breakpoint {
 private:
@@ -68,43 +62,22 @@ public:
 };
 
 
-#define MMAP_NAME         "/tmp/mmap_bdd_stdoutmutex"
 
-typedef struct debug_synchronisation {
-    pthread_mutex_t print_mutex;
-    pthread_mutex_t log_print_mutex;
-} debug_synchronisation_t;
 
 class TracedProgram {
 private:
     addr_t ram_start_address = 0;
     std::string elf_file_path;
 
-    inline static debug_synchronisation_t *debug_synchronisation_map;
-    inline static FILE *log_fp;
 
-    inline static pid_t bdd_pid;
+
     elf::ElfFile elf_file;
     pid_t traced_pid;
     int cached_status = 0;
 
     std::map<addr_t, Breakpoint> breakpointsMap;
 
-    static void lockPrint() {
-      pthread_mutex_lock(&debug_synchronisation_map->print_mutex);
-    }
 
-    static void unlockPrint() {
-      pthread_mutex_unlock(&debug_synchronisation_map->print_mutex);
-    }
-
-    static void lockLogPrint() {
-      pthread_mutex_lock(&debug_synchronisation_map->log_print_mutex);
-    }
-
-    static void unlockLogPrint() {
-      pthread_mutex_unlock(&debug_synchronisation_map->log_print_mutex);
-    }
 
     void initChild(std::vector<char *> &parameters);
 
@@ -112,26 +85,23 @@ private:
 
     void getProcessStatus();
 
-    void attachBDD(int &status) const;
+    void attachBDD(int &status);
 
     [[nodiscard]] addr_t getTracedRAMAddress() const;
 
-    static FILE *getLogFp();
+
 
 public:
     TracedProgram(const std::string &exec_path, std::vector<char *> &parameters);
 
 
     ~TracedProgram() {
-      /*int status;
-      if (waitpid(traced_pid, &status, WNOHANG))
-        kill(traced_pid, SIGKILL);*/
-      munmap(debug_synchronisation_map, sizeof(debug_synchronisation_t));
+      ExclusiveIO::terminate();
     }
 
 #pragma region breakpoints
 
-    [[nodiscard]] bool breakpointAtFunction(const std::string &fct_name);
+    [[nodiscard]] bool breakpointAtFunction(const std::string &fctName);
 
     [[nodiscard]] addr_t getIP() const;
 
@@ -155,15 +125,9 @@ public:
 
     void rerun();
 
-    static void initializePrintExclusion();
 
-    static void processPrint(const std::string &formatformat, ...);
 
-    static void processScan(std::string &value);
 
-    static void processPerror(const std::string &format, ...);
-
-    static void processLog(const std::string &formatformat, ...);
 
     void showStatus() const;
 
@@ -188,4 +152,4 @@ public:
 
 };
 
-#endif //C_BDD_TRACING_HPP
+#endif //C_BDD_BDD_PTRACE_HPP

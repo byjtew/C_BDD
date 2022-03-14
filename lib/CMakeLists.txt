@@ -1,8 +1,15 @@
-add_library(LIB_ELF_READER STATIC elf_reader.cpp ${INCLUDE_DIR}/elf_reader.hpp)
-set_target_properties(LIB_ELF_READER PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(LIB_ELF_READER PUBLIC ${INCLUDE_DIR})
+add_library(BDD_exclusive_io STATIC bdd_exclusive_io.cpp ${INCLUDE_DIR}/bdd_exclusive_io.hpp)
+set_target_properties(BDD_exclusive_io PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+target_include_directories(BDD_exclusive_io PUBLIC ${INCLUDE_DIR})
+target_link_libraries(BDD_exclusive_io PUBLIC TBB::tbb Threads::Threads)
 
-add_library(LIB_TRACING STATIC breakpoints.cpp tracing.cpp ${INCLUDE_DIR}/tracing.hpp elf_reader.cpp ${INCLUDE_DIR}/elf_reader.hpp)
-set_target_properties(LIB_TRACING PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(LIB_TRACING PUBLIC ${INCLUDE_DIR})
-target_link_libraries(LIB_TRACING PUBLIC LIB_ELF_READER)
+
+add_library(BDD_elf STATIC bdd_elf.cpp ${INCLUDE_DIR}/bdd_elf.hpp)
+set_target_properties(BDD_elf PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+target_include_directories(BDD_elf PUBLIC ${INCLUDE_DIR})
+
+
+add_library(BDD_ptrace STATIC bdd_ptrace_breakpoint.cpp bdd_ptrace.cpp ${INCLUDE_DIR}/bdd_ptrace.hpp)
+set_target_properties(BDD_ptrace PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+target_include_directories(BDD_ptrace PUBLIC ${INCLUDE_DIR})
+target_link_libraries(BDD_ptrace PUBLIC BDD_elf BDD_exclusive_io)

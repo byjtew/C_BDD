@@ -2,8 +2,8 @@
 // Created by byjtew on 05/03/2022.
 //
 
-#ifndef C_BDD_ELF_READER_HPP
-#define C_BDD_ELF_READER_HPP
+#ifndef C_BDD_BDD_ELF_HPP
+#define C_BDD_BDD_ELF_HPP
 
 #include <cstdint>
 #include <vector>
@@ -126,5 +126,5 @@ namespace elf {
 
 } // namespace elf
 
-#endif //C_BDD_ELF_READER_HPP
+#endif //C_BDD_BDD_ELF_HPP
 
