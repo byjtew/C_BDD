@@ -67,7 +67,21 @@ addr_t TracedProgram::getIP() const {
   return ip;
 }
 
+void TracedProgram::printBreakpointsMap() const {
+  std::string message("== Breakpoints ==\n");
+  for (const auto &kv: breakpointsMap) {
+    std::string buffer;
+    buffer.resize(40);
+    snprintf(buffer.data(), buffer.size(), "[%s]: 0x%016lX\n", (kv.second.isEnabled() ? "ENABLED " : "DISABLED"),
+             kv.second.getAddress());
+    message.append(buffer);
+  }
+  processPrint("== Breakpoints ==\n%s== =========== ==\n", message.c_str());
+}
+
 
 bool TracedProgram::isTrappedAtBreakpoint() const {
-  return breakpointsMap.contains(getIP());
+  auto ip = getIP();
+  printBreakpointsMap();
+  return breakpointsMap.contains(ip);
 }

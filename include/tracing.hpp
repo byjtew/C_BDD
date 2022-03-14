@@ -159,7 +159,9 @@ public:
 
     bool breakpointAtAddress(addr_t address);
 
-    addr_t getTracedProgExecAddress() const;
+    [[nodiscard]] addr_t getTracedProgExecAddress() const;
+
+    void printBreakpointsMap() const;
 };
 
 #endif //C_BDD_TRACING_HPP
