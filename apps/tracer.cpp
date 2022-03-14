@@ -51,8 +51,8 @@ void command_loop(TracedProgram &traced) {
         else
           TracedProgram::processPrint("Breakpoint[%s] placed.\n", choice_param.c_str());
       }
-
-
+    } else if (choice == "ip" || choice == "rip" || choice == "eip") {
+      TracedProgram::processPrint("Current pointer address: 0x%016lX\n", traced.getIP());
     } else if (choice == "step") {
       TracedProgram::processPrint("Stepping program.\n");
       traced.ptraceStep();
