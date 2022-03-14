@@ -26,7 +26,7 @@ using Elf_SymRef = Elf32_Sym
 
 #endif
 
-using addr_t = void *;
+using addr_t = uintptr_t;
 
 namespace elf {
     enum {

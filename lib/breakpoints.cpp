@@ -4,15 +4,14 @@
 Breakpoint::Breakpoint(pid_t pid, addr_t const &addr) {
   program_pid = pid;
   address = addr;
-  TracedProgram::processPrint("Breakpoint::Breakpoint(%d, 0x%016hX)\n", pid, address);
+  TracedProgram::processPrint("Breakpoint::Breakpoint(%d, 0x%016lX)\n", pid, address);
 }
 
 bool Breakpoint::enable() {
-  TracedProgram::processPrint("Breakpoint::enable() [0x%016hX]\n", address);
   original = ptrace(PTRACE_PEEKTEXT, program_pid, address);
-  TracedProgram::processPrint("Breakpoint::enable() [0x%016hX]: original = 0x%016hX\n", address, original);
+  TracedProgram::processPrint("Breakpoint::enable() [0x%016lX]: original = 0x%016lX\n", address, original);
   if (ptrace(PTRACE_POKETEXT, program_pid, address, (original & TRAP_MASK) | INT3) == -1) {
-    TracedProgram::processPerror("Breakpoint::enable() [0x%016hX]: ptrace error.\n", address);
+    TracedProgram::processPerror("Breakpoint::enable() [0x%016lX]: ptrace error.\n", address);
     return false;
   }
   return true;
@@ -24,7 +23,7 @@ void Breakpoint::disable() {
 
 
 void TracedProgram::setBreakpoint(Breakpoint &bp) {
-  TracedProgram::processPrint("TracedProgram::setBreakpoint(0x%016hX)\n", bp.getAddress());
+  TracedProgram::processPrint("TracedProgram::setBreakpoint(0x%016lX)\n", bp.getAddress());
   breakpointsMap.try_emplace(bp.getAddress(), bp);
   //breakpointsMap[bp.getAddress()] = bp;
 }
@@ -50,9 +49,9 @@ bool TracedProgram::breakpointAtFunction(const std::string &fct_name) {
 
 
 addr_t TracedProgram::getIP() const {
-  auto v = ptrace(PTRACE_PEEKUSER, traced_pid, sizeof(long) * REGISTER_IP);
-  auto ip = reinterpret_cast<addr_t>(v - 1);
-  TracedProgram::processPrint("TracedProgram::getIP(): 0x%016hX\n", ip);
+  auto v = ptrace(PTRACE_PEEKUSER, traced_pid, sizeof(addr_t) * REGISTER_IP);
+  auto ip = v - 1;
+  TracedProgram::processPrint("TracedProgram::getIP(): 0x%016lX\n", ip);
   return ip;
 }
 
