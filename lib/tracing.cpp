@@ -16,14 +16,18 @@ void TracedProgram::initChild(std::vector<char *> &parameters) {
 
 void TracedProgram::initBDD() {
   int status;
-  ptrace(PTRACE_ATTACH, traced_pid);
-  waitpid(traced_pid, &status, 0);
-  ptrace(PTRACE_SETOPTIONS, traced_pid, 0, PTRACE_O_TRACEEXIT);
+  attachBDD(status);
+  ram_start_address = getTracedRAMAddress();
   elf_file = elf::ElfFile(elf_file_path);
   processPrint("ready.\n");
   ptraceContinue();
 }
 
+void TracedProgram::attachBDD(int &status) const {
+  ptrace(PTRACE_ATTACH, traced_pid);
+  waitpid(traced_pid, &status, 0);
+  ptrace(PTRACE_SETOPTIONS, traced_pid, 0, PTRACE_O_TRACEEXIT);
+}
 
 TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &parameters) {
   elf_file_path = exec_path;
@@ -46,15 +50,27 @@ void TracedProgram::initializePrintExclusion() {
                                                                0);
 
   pthread_mutexattr_t mutexattr;
-  int rc = pthread_mutexattr_init(&mutexattr);
-  if (rc != 0)
+  if (pthread_mutexattr_init(&mutexattr))
     throw std::invalid_argument("pthread_mutexattr_init");
-  rc = pthread_mutexattr_setpshared(&mutexattr, PTHREAD_PROCESS_SHARED);
-  if (rc != 0)
+  if (pthread_mutexattr_setpshared(&mutexattr, PTHREAD_PROCESS_SHARED))
     throw std::invalid_argument("pthread_mutexattr_setpshared");
-  rc = pthread_mutex_init(&debug_synchronisation_map->print_mutex, &mutexattr);
-  if (rc != 0)
-    throw std::invalid_argument("pthread_mutex_init");
+  if (pthread_mutex_init(&debug_synchronisation_map->print_mutex, &mutexattr))
+    throw std::invalid_argument("pthread_mutex_init for print_mutex");
+
+  std::string log_filename;
+  log_filename.resize(32);
+  time_t t = time(nullptr);
+  struct tm tm = *localtime(&t);
+  snprintf(log_filename.data(), log_filename.size(), "./logs-%d-%02d-%02d %02d:%02d:%02d.log", tm.tm_year + 1900,
+           tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+  log_fp = fopen(log_filename.c_str(), "w");
+  if (log_fp == nullptr)
+    std::cerr << "log_fp creation error" << std::endl;
+  else
+    std::cout << "log_fp creation success" << std::endl;
+  if (pthread_mutex_init(&debug_synchronisation_map->log_print_mutex, &mutexattr))
+    throw std::invalid_argument("pthread_mutex_init for log_print_mutex");
 }
 
 
@@ -80,9 +96,9 @@ void TracedProgram::showStatus() const {
 }
 
 void TracedProgram::getProcessStatus() {
-  TracedProgram::processPrint("> getProcessStatus()\n");
+  TracedProgram::processLog("> getProcessStatus()\n");
   waitpid(traced_pid, &cached_status, 0);
-  TracedProgram::processPrint("< getProcessStatus(): %d\n", cached_status);
+  TracedProgram::processLog("< getProcessStatus(): %d\n", cached_status);
   auto rc = getIP();
   showStatus();
 }
@@ -118,7 +134,7 @@ std::string TracedProgram::getTrapName() const {
 
 void TracedProgram::stop() const {
   if (isDead()) return;
-  processPrint("Killing the program.\n");
+  processLog("Killing the program.\n");
   kill(traced_pid, SIGKILL);
 }
 
@@ -158,6 +174,23 @@ void TracedProgram::processPerror(const std::string &format, ...) {
   unlockPrint();
 }
 
+void TracedProgram::processLog(const std::string &format, ...) {
+  bool child = getpid() != bdd_pid;
+  std::string reformat;
+  if (format.ends_with("\n") && format.length() > 1)
+    reformat.append(child ? "[Child]: " : "[BDD]: ");
+  reformat.append(format);
+
+  lockLogPrint();
+  va_list args;
+
+  va_start(args, format.data());
+  std::string strbuf;
+  vfprintf(getLogFp(), reformat.c_str(), args);
+  va_end(args);
+  unlockLogPrint();
+}
+
 void TracedProgram::processScan(std::string &value) {
   lockPrint();
   std::cin >> value;
@@ -192,13 +225,14 @@ void TracedProgram::clearLoadedElf() {
   // TODO: Well...
 }
 
-addr_t TracedProgram::getTracedProgExecAddress() const {
+addr_t TracedProgram::getTracedRAMAddress() const {
+  if (ram_start_address > 0) return ram_start_address;
   std::string map_path;
   map_path.resize(20);
   snprintf(map_path.data(), map_path.size(), "/proc/%d/maps", traced_pid);
   std::ifstream input(map_path);
   if (input.fail())
-    throw std::invalid_argument("Bad input: TracedProgram::getTracedProgExecAddress(): file.open() failed");
+    throw std::invalid_argument("Bad input: TracedProgram::getTracedRAMAddress(): file.open() failed");
   std::string buffer;
   getline(input, buffer);
   input.close();
@@ -207,6 +241,9 @@ addr_t TracedProgram::getTracedProgExecAddress() const {
   return strtoul(ram_address.c_str(), (char **) nullptr, 0);
 }
 
+FILE *TracedProgram::getLogFp() {
+  return log_fp;
+}
 
 
 

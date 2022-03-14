@@ -27,15 +27,10 @@ bool Breakpoint::disable() {
   return true;
 }
 
-bool Breakpoint::isEnabled() const {
-  return enabled;
-}
-
 
 void TracedProgram::setBreakpoint(Breakpoint &bp) {
   TracedProgram::processPrint("TracedProgram::setBreakpoint(0x%016lX)\n", bp.getAddress());
   breakpointsMap.try_emplace(bp.getAddress(), bp);
-  //breakpointsMap[bp.getAddress()] = bp;
 }
 
 bool TracedProgram::breakpointAtAddress(addr_t address) {
@@ -50,7 +45,7 @@ bool TracedProgram::breakpointAtAddress(const std::string &strAddress) {
 }
 
 bool TracedProgram::breakpointAtFunction(const std::string &fct_name) {
-  auto prog_offset = getTracedProgExecAddress();
+  auto prog_offset = getTracedRAMAddress();
   processPrint("RAM offset: 0x%016lX\n", prog_offset);
   auto addr = elf_file.getFunctionAddress(fct_name);
   processPrint("addr value: 0x%016lX\n", addr);

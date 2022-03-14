@@ -35,6 +35,7 @@
 #include <sys/mman.h>
 #include <cstdarg>
 #include <fcntl.h>
+#include <fstream>
 
 #include "elf_reader.hpp"
 
@@ -48,13 +49,14 @@ private:
     addr_t address;
     instr_t original;
 public:
-    bool isEnabled() const;
 
     Breakpoint(pid_t pid, const addr_t &addr);
 
-    bool enable();
+    [[nodiscard]] bool enable();
 
-    bool disable();
+    [[nodiscard]] bool disable();
+
+    [[nodiscard]] bool isEnabled() const { return enabled; }
 
     [[nodiscard]] addr_t getAddress() const {
       return address;
@@ -70,12 +72,17 @@ public:
 
 typedef struct debug_synchronisation {
     pthread_mutex_t print_mutex;
+    pthread_mutex_t log_print_mutex;
 } debug_synchronisation_t;
 
 class TracedProgram {
 private:
+    addr_t ram_start_address = 0;
     std::string elf_file_path;
+
     inline static debug_synchronisation_t *debug_synchronisation_map;
+    inline static FILE *log_fp;
+
     inline static pid_t bdd_pid;
     elf::ElfFile elf_file;
     pid_t traced_pid;
@@ -91,11 +98,25 @@ private:
       pthread_mutex_unlock(&debug_synchronisation_map->print_mutex);
     }
 
+    static void lockLogPrint() {
+      pthread_mutex_lock(&debug_synchronisation_map->log_print_mutex);
+    }
+
+    static void unlockLogPrint() {
+      pthread_mutex_unlock(&debug_synchronisation_map->log_print_mutex);
+    }
+
     void initChild(std::vector<char *> &parameters);
 
     void initBDD();
 
     void getProcessStatus();
+
+    void attachBDD(int &status) const;
+
+    [[nodiscard]] addr_t getTracedRAMAddress() const;
+
+    static FILE *getLogFp();
 
 public:
     TracedProgram(const std::string &exec_path, std::vector<char *> &parameters);
@@ -134,10 +155,15 @@ public:
 
     void rerun();
 
+    static void initializePrintExclusion();
+
     static void processPrint(const std::string &formatformat, ...);
 
     static void processScan(std::string &value);
 
+    static void processPerror(const std::string &format, ...);
+
+    static void processLog(const std::string &formatformat, ...);
 
     void showStatus() const;
 
@@ -149,19 +175,17 @@ public:
 
     [[nodiscard]] bool isTrappedAtBreakpoint() const;
 
-    static void initializePrintExclusion();
 
     void clearLoadedElf();
 
-    static void processPerror(const std::string &format, ...);
 
     bool breakpointAtAddress(const std::string &strAddress);
 
     bool breakpointAtAddress(addr_t address);
 
-    [[nodiscard]] addr_t getTracedProgExecAddress() const;
-
     void printBreakpointsMap() const;
+
+
 };
 
 #endif //C_BDD_TRACING_HPP
