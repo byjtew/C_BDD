@@ -80,11 +80,21 @@ private:
 
     template<typename... Args>
     static void
-    genericPrint(std::ostream &out, ExclusiveIO::color_t color, const std::string_view &rt_fmt_str,
-                 Args &&... args) {
+    genericFormatPrint(std::ostream &out, ExclusiveIO::color_t color, const std::string_view &rt_fmt_str,
+                       Args &&... args) {
       lockPrint();
       out << "\033[" << color << "m" << (isParent() ? "[BDD]: " : "[Child]: ")
           << formatArgs(rt_fmt_str, args...) << "\033[0m" << std::flush;
+      unlockPrint();
+    }
+
+    template<typename... Args>
+    inline static void
+    genericNotFormatPrint(std::ostream &out, ExclusiveIO::color_t color, Args &&... args) {
+      lockPrint();
+      out << "\033[" << color << "m" << (isParent() ? "[BDD]: " : "[Child]: ");
+      ((out << args), ...);
+      out << "\033[0m" << std::flush;
       unlockPrint();
     }
 
@@ -104,33 +114,69 @@ public:
 
     static void terminate();
 
+#pragma region Formatted print
+
     template<typename... Args>
     static void info(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericPrint(std::cout, isParent() ? color_t::FG_BLUE : color_t::FG_GREEN, rt_fmt_str,
-                                std::forward<Args>(args)...);
+      ExclusiveIO::genericFormatPrint(std::cout, isParent() ? color_t::FG_BLUE : color_t::FG_GREEN, rt_fmt_str,
+                                      std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     static void error(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericPrint(std::cerr, color_t::FG_RED, rt_fmt_str, std::forward<Args>(args)...);
+      ExclusiveIO::genericFormatPrint(std::cerr, color_t::FG_RED, rt_fmt_str, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     static void hint(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericPrint(std::cout, color_t::FG_CYAN, rt_fmt_str, std::forward<Args>(args)...);
+      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_CYAN, rt_fmt_str, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     static void debug(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericPrint(std::cout, color_t::FG_MAGENTA, rt_fmt_str, std::forward<Args>(args)...);
+      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_MAGENTA, rt_fmt_str, std::forward<Args>(args)...);
       //ExclusiveIO::genericFilePrint(rt_fmt_str, std::forward<>(args)...);
     }
 
     template<typename... Args>
     static void debugError(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericPrint(std::cout, color_t::FG_BRIGHT_MAGENTA, rt_fmt_str, std::forward<Args>(args)...);
+      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_BRIGHT_MAGENTA, rt_fmt_str, std::forward<Args>(args)...);
       //ExclusiveIO::genericFilePrint(rt_fmt_str, std::forward<>(args)...);
     }
+
+#pragma endregion
+
+#pragma region Unformatted print
+
+    template<typename... Args>
+    static void info(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, isParent() ? color_t::FG_BLUE : color_t::FG_GREEN,
+                                         std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    static void error(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cerr, color_t::FG_RED, std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    static void hint(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_CYAN, std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    static void debug(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_MAGENTA, std::forward<Args>(args)...);
+      //ExclusiveIO::genericFilePrint( std::forward<>(args)...);
+    }
+
+    template<typename... Args>
+    static void debugError(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_BRIGHT_MAGENTA, std::forward<Args>(args)...);
+      //ExclusiveIO::genericFilePrint( std::forward<>(args)...);
+    }
+
+#pragma endregion
 
     template<typename T>
     static void input(T &buf) {
