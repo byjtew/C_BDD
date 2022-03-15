@@ -76,9 +76,9 @@ namespace elf {
         [[maybe_unused]] [[nodiscard]] static std::string getSectionTypeAsString(const Elf_Shdr &sHeader);
 
         [[maybe_unused]] [[nodiscard]] std::string
-        getNameFromStringTable(unsigned int strTableIndex, unsigned int offset);
+        getNameFromStringTable(unsigned int strTableIndex, unsigned int offset) const;
 
-        [[maybe_unused]] [[nodiscard]] std::string getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym);
+        [[maybe_unused]] [[nodiscard]] std::string getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) const;
 
         [[maybe_unused]] [[nodiscard]] std::string getSectionName(const Elf_Shdr &sHeader);
 
@@ -93,7 +93,9 @@ namespace elf {
 
         [[maybe_unused]] [[nodiscard]] static std::string getSymbolBindingAsString(const Elf_SymRef &sym);
 
-        [[maybe_unused]] [[nodiscard]] char *getSectionDataPtrAt(unsigned index);
+        [[maybe_unused]] [[nodiscard]] const char *getSectionDataPtrAt(unsigned index) const;
+
+        static unsigned getSymbolCount(const Elf_Shdr &sHdr);
 
     public:
         explicit ElfFile(const std::string &eachStrTable);
@@ -116,11 +118,11 @@ namespace elf {
 
         [[maybe_unused]] void printSymbolEntry(unsigned index, const Elf_SymRef &sym, const Elf_Shdr &sHdr, FILE *fp);
 
-        [[maybe_unused]] [[nodiscard]] addr_t getFunctionAddress(const std::string &fct_name);
+        [[maybe_unused]] [[nodiscard]] addr_t getFunctionAddress(const std::string &fct_name) const;
 
-        Elf_SymRef getSymbolSectionAt(unsigned int index, unsigned offset);
+        [[nodiscard]] Elf_SymRef getSymbolSectionAt(unsigned int index, unsigned offset) const;
 
-        static unsigned getSymbolCount(const Elf_Shdr &sHdr);
+        [[nodiscard]] std::vector<std::pair<addr_t, std::string>> getFunctionsList() const;
     };
 
 

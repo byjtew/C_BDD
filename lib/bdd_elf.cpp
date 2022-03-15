@@ -115,7 +115,7 @@ void ElfFile::printSymbolEntry(unsigned index, const Elf_SymRef &sym, const Elf_
 }
 
 Elf_SymRef
-ElfFile::getSymbolSectionAt(unsigned int index, unsigned offset) {
+ElfFile::getSymbolSectionAt(unsigned int index, unsigned offset) const {
   return *((Elf_SymRef *) (getSectionDataPtrAt(index) + offset));
 }
 
@@ -294,7 +294,7 @@ std::string ElfFile::getSymbolTypeAsString(const Elf_SymRef &sym) {
   }
 }
 
-std::string ElfFile::getNameFromStringTable(unsigned strTableIndex, unsigned offset) {
+std::string ElfFile::getNameFromStringTable(unsigned strTableIndex, unsigned offset) const {
   auto data_ptr = getSectionDataPtrAt(strTableIndex);
   if (data_ptr == nullptr) return "Unnamed";
   return data_ptr + offset;
@@ -304,7 +304,7 @@ std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) {
   return getNameFromStringTable(header.e_shstrndx, sHeader.sh_name);
 }
 
-std::string ElfFile::getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) {
+std::string ElfFile::getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) const {
   return getNameFromStringTable(sHeader.sh_link, sym.st_name);
 }
 
@@ -321,23 +321,30 @@ std::string ElfFile::getSymbolBindingAsString(const Elf_SymRef &sym) {
   }
 }
 
-char *ElfFile::getSectionDataPtrAt(unsigned int index) {
+const char *ElfFile::getSectionDataPtrAt(unsigned int index) const {
   if (index >= sectionsData.size()) return nullptr;
   return sectionsData.at(index).data();
 }
 
-addr_t ElfFile::getFunctionAddress(const std::string &fct_name) {
+std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
+  std::vector<std::pair<addr_t, std::string>> functions;
   auto symbolHeaders = getSectionHeaderIndexesByType(Elf_SectionTypeLinkerSymbolTable);
   for (const auto &e: symbolHeaders) {
     Elf_Shdr sHdr = sectionsHeaders.at(e);
     for (unsigned i = 0; i < getSymbolCount(sHdr); i++) {
       Elf_SymRef symbolSectionData = getSymbolSectionAt(e, i * sHdr.sh_entsize);
       auto name = getSymbolName(sHdr, symbolSectionData);
-      if (name != fct_name) continue;
-      return symbolSectionData.st_value;
+      functions.emplace_back((addr_t) symbolSectionData.st_value, name);
     }
   }
-  return 0;
+  return functions;
+}
+
+addr_t ElfFile::getFunctionAddress(const std::string &fct_name) const {
+  auto list = getFunctionsList();
+  return std::find_if(std::execution::par, list.cbegin(), list.cend(), [fct_name](const auto &e) {
+      return e.second == fct_name;
+  })->first;
 }
 
 unsigned ElfFile::getSymbolCount(const Elf_Shdr &sHdr) {
