@@ -62,13 +62,10 @@ public:
 };
 
 
-
-
 class TracedProgram {
 private:
     addr_t ram_start_address = 0;
     std::string elf_file_path;
-
 
 
     elf::ElfFile elf_file;
@@ -76,7 +73,6 @@ private:
     int cached_status = 0;
 
     std::map<addr_t, Breakpoint> breakpointsMap;
-
 
 
     void initChild(std::vector<char *> &parameters);
@@ -88,7 +84,6 @@ private:
     void attachBDD(int &status);
 
     [[nodiscard]] addr_t getTracedRAMAddress() const;
-
 
 
 public:
@@ -126,9 +121,6 @@ public:
     void rerun();
 
 
-
-
-
     void showStatus() const;
 
     [[nodiscard]] std::string getTrapName() const;
@@ -139,9 +131,7 @@ public:
 
     [[nodiscard]] bool isTrappedAtBreakpoint() const;
 
-
     void clearLoadedElf();
-
 
     bool breakpointAtAddress(const std::string &strAddress);
 
@@ -149,7 +139,11 @@ public:
 
     void printBreakpointsMap() const;
 
+    [[nodiscard]] std::string dumpAt(addr_t address, addr_t offset = 20) const;
 
+    [[nodiscard]] std::string dumpAtCurrent(addr_t offset = 60) const;
+
+    [[nodiscard]] addr_t getElfIP() const;
 };
 
 #endif //C_BDD_BDD_PTRACE_HPP

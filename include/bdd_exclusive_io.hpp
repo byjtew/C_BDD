@@ -25,19 +25,17 @@ typedef struct synchronisation_mutex {
 
 class ExclusiveIO {
 private:
-    typedef enum {
-        FG_RED = 31,
-        FG_GREEN = 32,
-        FG_YELLOW = 33,
-        FG_BRIGHT_BLUE = 94,
-        FG_BLUE = 34,
-        FG_BRIGHT_MAGENTA = 95,
-        FG_MAGENTA = 35,
-        FG_BRIGHT_CYAN = 96,
-        FG_CYAN = 36,
-        FG_WHITE = 37,
-        FG_DEFAULT = 39,
 
+    // Source: https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_.28Select_Graphic_Rendition.29_parameters
+    typedef enum {
+        FG_BRIGHT_RED = 91, FG_RED = 31,
+        FG_BRIGHT_GREEN = 92, FG_GREEN = 32,
+        FG_BRIGHT_YELLOW = 93, FG_YELLOW = 33,
+        FG_BRIGHT_BLUE = 94, FG_BLUE = 34,
+        FG_BRIGHT_MAGENTA = 95, FG_MAGENTA = 35,
+        FG_BRIGHT_CYAN = 96, FG_CYAN = 36,
+        FG_BRIGHT_WHITE = 97, FG_WHITE = 37, FG_GRAY = 90,
+        FG_DEFAULT = 39,
     } color_t;
 
     inline static pid_t parent_pid;
@@ -117,30 +115,30 @@ public:
 #pragma region Formatted print
 
     template<typename... Args>
-    static void info(const std::string_view &rt_fmt_str, Args &&... args) {
+    static void info_f(const std::string_view &rt_fmt_str, Args &&... args) {
       ExclusiveIO::genericFormatPrint(std::cout, isParent() ? color_t::FG_BLUE : color_t::FG_GREEN, rt_fmt_str,
                                       std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    static void error(const std::string_view &rt_fmt_str, Args &&... args) {
+    static void error_f(const std::string_view &rt_fmt_str, Args &&... args) {
       ExclusiveIO::genericFormatPrint(std::cerr, color_t::FG_RED, rt_fmt_str, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    static void hint(const std::string_view &rt_fmt_str, Args &&... args) {
+    static void hint_f(const std::string_view &rt_fmt_str, Args &&... args) {
       ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_CYAN, rt_fmt_str, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    static void debug(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_MAGENTA, rt_fmt_str, std::forward<Args>(args)...);
+    static void debug_f(const std::string_view &rt_fmt_str, Args &&... args) {
+      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_GRAY, rt_fmt_str, std::forward<Args>(args)...);
       //ExclusiveIO::genericFilePrint(rt_fmt_str, std::forward<>(args)...);
     }
 
     template<typename... Args>
-    static void debugError(const std::string_view &rt_fmt_str, Args &&... args) {
-      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_BRIGHT_MAGENTA, rt_fmt_str, std::forward<Args>(args)...);
+    static void debugError_f(const std::string_view &rt_fmt_str, Args &&... args) {
+      ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_BRIGHT_WHITE, rt_fmt_str, std::forward<Args>(args)...);
       //ExclusiveIO::genericFilePrint(rt_fmt_str, std::forward<>(args)...);
     }
 
@@ -149,30 +147,36 @@ public:
 #pragma region Unformatted print
 
     template<typename... Args>
-    static void info(Args &&... args) {
+    static void infoHigh_nf(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, isParent() ? color_t::FG_BRIGHT_BLUE : color_t::FG_BRIGHT_GREEN,
+                                         std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    static void info_nf(Args &&... args) {
       ExclusiveIO::genericNotFormatPrint(std::cout, isParent() ? color_t::FG_BLUE : color_t::FG_GREEN,
                                          std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    static void error(Args &&... args) {
+    static void error_nf(Args &&... args) {
       ExclusiveIO::genericNotFormatPrint(std::cerr, color_t::FG_RED, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    static void hint(Args &&... args) {
+    static void hint_nf(Args &&... args) {
       ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_CYAN, std::forward<Args>(args)...);
     }
 
     template<typename... Args>
-    static void debug(Args &&... args) {
-      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_MAGENTA, std::forward<Args>(args)...);
+    static void debug_nf(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_GRAY, std::forward<Args>(args)...);
       //ExclusiveIO::genericFilePrint( std::forward<>(args)...);
     }
 
     template<typename... Args>
-    static void debugError(Args &&... args) {
-      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_BRIGHT_MAGENTA, std::forward<Args>(args)...);
+    static void debugError_nf(Args &&... args) {
+      ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_BRIGHT_WHITE, std::forward<Args>(args)...);
       //ExclusiveIO::genericFilePrint( std::forward<>(args)...);
     }
 

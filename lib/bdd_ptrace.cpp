@@ -8,10 +8,10 @@
 void TracedProgram::initChild(std::vector<char *> &parameters) {
   int status;
   ptrace(PTRACE_TRACEME, &status, 0);
-  ExclusiveIO::info("ready, pid=%u\n", getpid());
+  ExclusiveIO::info_f("ready, pid=%u\n", getpid());
   parameters.push_back(nullptr);
   execve(elf_file_path.c_str(), parameters.data(), nullptr);
-  ExclusiveIO::info("exit.\n");
+  ExclusiveIO::info_f("exit.\n");
 }
 
 void TracedProgram::initBDD() {
@@ -19,7 +19,7 @@ void TracedProgram::initBDD() {
   attachBDD(status);
   ram_start_address = getTracedRAMAddress();
   elf_file = elf::ElfFile(elf_file_path);
-  ExclusiveIO::info("ready.\n");
+  ExclusiveIO::info_f("ready.\n");
 }
 
 void TracedProgram::attachBDD(int &status) {
@@ -40,26 +40,26 @@ TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &
 
 void TracedProgram::ptraceContinue() {
   long rc = ptrace(PTRACE_CONT, traced_pid, 0, 0);
-  ExclusiveIO::debug("ptraceContinue(): %d\n", rc);
+  ExclusiveIO::debug_f("ptraceContinue(): %d\n", rc);
   getProcessStatus();
 }
 
 void TracedProgram::ptraceStep() {
   long rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
-  ExclusiveIO::debug("ptraceStep(): %d\n", rc);
+  ExclusiveIO::debug_f("ptraceStep(): %d\n", rc);
   getProcessStatus();
 }
 
 void TracedProgram::showStatus() const {
-  ExclusiveIO::info(
+  ExclusiveIO::info_f(
       "=================\nisAlive(): %d\nisStopped(): %d\nisTrapped(): %d\nisExiting(): %d\n=================\n",
       isAlive(), isStopped(), isTrapped(), isExiting());
 }
 
 void TracedProgram::getProcessStatus() {
-  ExclusiveIO::debug("> getProcessStatus()\n");
+  ExclusiveIO::debug_f("> getProcessStatus()\n");
   waitpid(traced_pid, &cached_status, 0);
-  ExclusiveIO::debug("< getProcessStatus(): %d\n", cached_status);
+  ExclusiveIO::debug_f("< getProcessStatus(): %d\n", cached_status);
   showStatus();
 }
 
@@ -94,7 +94,7 @@ std::string TracedProgram::getTrapName() const {
 
 void TracedProgram::stop() const {
   if (isDead()) return;
-  ExclusiveIO::debug("Killing the program.\n");
+  ExclusiveIO::debug_f("Killing the program.\n");
   kill(traced_pid, SIGKILL);
 }
 
@@ -142,6 +142,38 @@ addr_t TracedProgram::getTracedRAMAddress() const {
   buffer.insert(0, "0x");
   return strtoul(buffer.c_str(), (char **) nullptr, 0);
 }
+
+std::string getOutputFromExec(const char *cmd) {
+  ExclusiveIO::debug_nf("::getOutputFromExec: ", cmd, "\n");
+  std::string result;
+  char buffer[256];
+  char *read_data;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+  if (!pipe)
+    throw std::runtime_error("popen() failed!");
+  do {
+    read_data = fgets(buffer, 256, pipe.get());
+    if (read_data != nullptr)
+      result.append(std::string(read_data));
+  } while (read_data != nullptr);
+  return result;
+}
+
+constexpr auto objdump_cmd_format = "objdump -C -D -w --prefix-address --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
+
+std::string TracedProgram::dumpAt(addr_t address, addr_t offset) const {
+  std::string cmd;
+  cmd.resize(256);
+  auto size = sprintf(cmd.data(), objdump_cmd_format, address, address + offset, elf_file_path.c_str());
+  cmd.resize(size);
+  return getOutputFromExec(cmd.c_str());
+}
+
+std::string TracedProgram::dumpAtCurrent(addr_t offset) const {
+  return dumpAt(getElfIP(), offset);
+}
+
+
 
 
 

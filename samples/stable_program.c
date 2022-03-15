@@ -24,8 +24,6 @@ int main() {
   unsigned long ul = 24UL;
   printf("unsigned long var: %lu\n", ul);
 
-  printf("60 seconds nap...\n");
-  sleep(60);
   func();
 
   printf("Goodbye.\n");
