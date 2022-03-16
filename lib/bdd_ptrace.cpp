@@ -52,11 +52,12 @@ void TracedProgram::ptraceContinue(bool lock) {
 }
 
 void TracedProgram::ptraceStep() {
+  ExclusiveIO::debug_f("TracedProgram::ptraceStep()\n");
   ExclusiveIO::lockPrint();
   long rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
-  ExclusiveIO::debug_f("ptraceStep(): %d\n", rc);
   waitAndUpdateStatus();
   ExclusiveIO::unlockPrint();
+  ExclusiveIO::debug_f("TracedProgram::ptraceStep(): %ld\n", rc);
   showStatus();
 }
 
