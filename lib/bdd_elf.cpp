@@ -163,7 +163,7 @@ std::string ElfFile::getSectionTypeAsString(const Elf_Shdr &sHeader) {
   }
 }
 
-void ElfFile::printSectionHeaderAt(int index, FILE *fp) {
+void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
   auto sHeader = sectionsHeaders.at(index);
   fprintf
       (fp,
@@ -251,7 +251,6 @@ ElfFile::ElfFile(const std::string &elf_filepath) {
   input.close();
 }
 
-
 Elf_Shdr ElfFile::getSectionHeaderByType(Elf_SectionType type) const {
   return *std::find_if(std::execution::par, sectionsHeaders.cbegin(), sectionsHeaders.cend(),
                        [type](const Elf_Shdr &each) {
@@ -300,7 +299,7 @@ std::string ElfFile::getNameFromStringTable(unsigned strTableIndex, unsigned off
   return data_ptr + offset;
 }
 
-std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) {
+std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) const {
   return getNameFromStringTable(header.e_shstrndx, sHeader.sh_name);
 }
 
@@ -333,8 +332,10 @@ std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
     Elf_Shdr sHdr = sectionsHeaders.at(e);
     for (unsigned i = 0; i < getSymbolCount(sHdr); i++) {
       Elf_SymRef symbolSectionData = getSymbolSectionAt(e, i * sHdr.sh_entsize);
+      auto address = symbolSectionData.st_value;
       auto name = getSymbolName(sHdr, symbolSectionData);
-      functions.emplace_back((addr_t) symbolSectionData.st_value, name);
+      if (!name.empty())
+        functions.emplace_back(address, name);
     }
   }
   return functions;

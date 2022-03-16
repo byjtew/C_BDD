@@ -117,6 +117,10 @@ public:
 
     [[nodiscard]] bool isTrapped() const;
 
+    [[nodiscard]] elf::ElfFile getElfFile() const {
+      return elf_file;
+    }
+
     void stop() const;
 
     void rerun(std::vector<char *> &args);

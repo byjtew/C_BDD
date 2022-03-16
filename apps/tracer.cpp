@@ -10,6 +10,15 @@
 #include "bdd_ptrace.hpp"
 #include "bdd_exclusive_io.hpp"
 
+void printFunctionsList(std::vector<std::pair<addr_t, std::string>> &functionsList, bool full_details) {
+  ExclusiveIO::debug_f("::printFunctionsList()\n");
+  ExclusiveIO::info_f("Functions:\n");
+  std::for_each(functionsList.begin(), functionsList.end(), [full_details](const auto &it) {
+      if (it.first > 0 || full_details)
+        ExclusiveIO::info_f("[0x%016lX]: %s\n", it.first, it.second.c_str());
+  });
+}
+
 void command_loop(TracedProgram &traced) {
   bool force_end = false;
   std::string choice, choice_param;
@@ -56,6 +65,9 @@ void command_loop(TracedProgram &traced) {
       }
     } else if (choice == "ip" || choice == "rip" || choice == "eip") {
       ExclusiveIO::info_f("Current pointer address: 0x%016lX\n", traced.getIP());
+    } else if (choice == "functions") {
+      auto functionsList = traced.getElfFile().getFunctionsList();
+      printFunctionsList(functionsList, false);
     } else if (choice == "step") {
       ExclusiveIO::info_f("Stepping program.\n");
       traced.ptraceStep();

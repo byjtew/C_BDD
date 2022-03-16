@@ -2,7 +2,6 @@
 // Created by byjtew on 12/03/2022.
 //
 
-#include <fstream>
 #include "bdd_ptrace.hpp"
 
 void TracedProgram::initChild(std::vector<char *> &parameters) {
