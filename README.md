@@ -10,6 +10,7 @@ C_BDD is a free and open source program analysis tool written in C++, for UNIX s
 - [X] **Program execution**: Run - Pause - Stop
 - [X] **ELF**: Display headers and sections
 - [ ] **Segmentation faults**: Catch and analyse
+- [X] **Stack**: Display
 - [ ] **Register values**: Display
 - [ ] **Function parameters**: Display
 - [ ] **Global variables**: Display
@@ -49,6 +50,7 @@ Before typing any fo theses commands, you should run the debugger:\
 - `stop`: Try to stop the traced program
 - `kill`: Force the traced program to stop (a memory leak issue may occur)
 - `status`: Display the overall traced program status
+- `functions <full>`: Display every functions
 - `d`/`dump <n>`: Display the program (assembly & C/C++) with the next *n* lines at the current location
 - `df`/`dump full <n>`: More detailed version of: `dump`
 - `s`/`step`: Run one assembly instruction in the traced-program
