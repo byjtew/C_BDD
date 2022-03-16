@@ -38,9 +38,18 @@ TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &
 }
 
 
+void TracedProgram::resumeBreakpoint() {
+  auto bp = getHitBreakpoint();
+  bp.disable();
+  ptraceBackwardStep();
+  ptraceStep();
+  bp.enable();
+}
+
 void TracedProgram::ptraceContinue(bool lock) {
   if (isTrappedAtBreakpoint())
-    getHitBreakpoint().disable();
+    resumeBreakpoint();
+
   ExclusiveIO::debug_f("TracedProgram::ptraceContinue(): locking.\n");
   if (lock)
     ExclusiveIO::lockPrint();
@@ -49,6 +58,12 @@ void TracedProgram::ptraceContinue(bool lock) {
   if (lock)
     ExclusiveIO::unlockPrint();
   ExclusiveIO::debug_f("TracedProgram::ptraceContinue(): unlocking.\n");
+}
+
+
+void TracedProgram::ptraceBackwardStep() const {
+  long rc = ptrace(PTRACE_POKEUSER, traced_pid, sizeof(addr_t) * RIP, getIP());
+  ExclusiveIO::debug_f("TracedProgram::ptraceBackwardStep(): %d\n", rc);
 }
 
 void TracedProgram::ptraceStep() {
@@ -167,12 +182,13 @@ std::string getOutputFromExec(const char *cmd) {
   return result;
 }
 
-constexpr auto objdump_cmd_format = "objdump -C -D -w --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
+constexpr auto objdump_cmd_format = "objdump -C -D -S -w --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
 
 std::string TracedProgram::dumpAt(addr_t address, addr_t offset) const {
   std::string cmd;
   cmd.resize(256);
-  auto size = sprintf(cmd.data(), objdump_cmd_format, address, address + offset, elf_file_path.c_str());
+  auto size = sprintf(cmd.data(), objdump_cmd_format, address - offset / 2, address + 5 * offset,
+                      elf_file_path.c_str());
   cmd.resize(size);
   return getOutputFromExec(cmd.c_str());
 }

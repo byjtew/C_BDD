@@ -46,9 +46,9 @@ public:
 
     Breakpoint(pid_t pid, const addr_t &addr);
 
-    [[nodiscard]] bool enable();
+    bool enable();
 
-    [[nodiscard]] void disable();
+    void disable();
 
     [[nodiscard]] bool isEnabled() const { return enabled; }
 
@@ -85,6 +85,9 @@ private:
 
     [[nodiscard]] addr_t getTracedRAMAddress() const;
 
+    void ptraceBackwardStep() const;
+
+    void resumeBreakpoint();
 
 public:
     TracedProgram(const std::string &exec_path, std::vector<char *> &parameters);

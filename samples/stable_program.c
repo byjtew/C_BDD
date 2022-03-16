@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <stdint.h>
 
-void func() {
-  printf("Printing from a function: [0x%016lX]\n", (uintptr_t) func);
+void func(char *message) {
+  printf("Printing from a function: %s [0x%016lX]\n", message, (uintptr_t) func);
 }
 
 int main() {
@@ -24,7 +24,7 @@ int main() {
   unsigned long ul = 24UL;
   printf("unsigned long var: %lu\n", ul);
 
-  func();
+  func("Secret message");
 
   printf("Goodbye.\n");
   return 0;
