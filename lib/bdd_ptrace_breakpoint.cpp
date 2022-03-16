@@ -1,3 +1,4 @@
+#include <cassert>
 #include "bdd_ptrace.hpp"
 
 Breakpoint::Breakpoint(pid_t pid, addr_t const &addr) {
@@ -7,24 +8,23 @@ Breakpoint::Breakpoint(pid_t pid, addr_t const &addr) {
 }
 
 bool Breakpoint::enable() {
-  ExclusiveIO::debug_f("Breakpoint::enable()\n");
+  ExclusiveIO::debug_f("Breakpoint[0x%016lX]::enable()\n", address);
   original = ptrace(PTRACE_PEEKTEXT, program_pid, address);
-  ExclusiveIO::debug_f("Breakpoint::enable() [0x%016lX]: original = 0x%016lX\n", address, original);
+  ExclusiveIO::debug_f("Breakpoint[0x%016lX]::enable(): original = 0x%016lX\n", address, original);
   if (ptrace(PTRACE_POKETEXT, program_pid, address, (original & TRAP_MASK) | INT3) == -1) {
-    ExclusiveIO::debugError_f("Breakpoint::enable() [0x%016lX]: ptrace error.\n", address);
+    ExclusiveIO::debugError_f("Breakpoint[0x%016lX]::enable(): ptrace error.\n", address);
     return false;
   }
   enabled = true;
   return true;
 }
 
-bool Breakpoint::disable() {
-  if (ptrace(PTRACE_POKETEXT, program_pid, address, original)) {
-    ExclusiveIO::debugError_f("Breakpoint::enable() [0x%016lX]: ptrace error.\n", address);
-    return false;
+void Breakpoint::disable() {
+  ExclusiveIO::debug_f("Breakpoint[0x%016lX]::disable()\n", address);
+  if (ptrace(PTRACE_POKETEXT, program_pid, address, original) == -1) {
+    ExclusiveIO::debugError_f("Breakpoint[0x%016lX]::disable(): ptrace error.\n", address);
+    enabled = false;
   }
-  enabled = false;
-  return true;
 }
 
 
@@ -80,6 +80,12 @@ void TracedProgram::printBreakpointsMap() const {
     message.append(buffer);
   }
   ExclusiveIO::hint_f("== Breakpoints ==\n%s== =========== ==\n", message.c_str());
+}
+
+Breakpoint &TracedProgram::getHitBreakpoint() {
+  addr_t ip = getIP();
+  assert(breakpointsMap.contains(ip));
+  return breakpointsMap.at(ip);
 }
 
 

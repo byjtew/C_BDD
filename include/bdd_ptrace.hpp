@@ -48,7 +48,7 @@ public:
 
     [[nodiscard]] bool enable();
 
-    [[nodiscard]] bool disable();
+    [[nodiscard]] void disable();
 
     [[nodiscard]] bool isEnabled() const { return enabled; }
 
@@ -79,7 +79,7 @@ private:
 
     void initBDD();
 
-    void getProcessStatus();
+    void waitAndUpdateStatus();
 
     void attachBDD(int &status);
 
@@ -102,7 +102,7 @@ public:
 
 #pragma endregion breakpoints
 
-    void ptraceContinue();
+    void ptraceContinue(bool lock = true);
 
     void ptraceStep();
 
@@ -144,6 +144,8 @@ public:
     [[nodiscard]] std::string dumpAtCurrent(addr_t offset = 60) const;
 
     [[nodiscard]] addr_t getElfIP() const;
+
+    [[nodiscard]] Breakpoint &getHitBreakpoint();
 };
 
 #endif //C_BDD_BDD_PTRACE_HPP

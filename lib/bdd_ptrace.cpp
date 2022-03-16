@@ -26,7 +26,7 @@ void TracedProgram::attachBDD(int &status) {
   ptrace(PTRACE_ATTACH, traced_pid);
   waitpid(traced_pid, &status, 0);
   ptrace(PTRACE_SETOPTIONS, traced_pid, 0, PTRACE_O_TRACEEXIT);
-  ptraceContinue();
+  ptraceContinue(false);
 }
 
 TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &parameters) {
@@ -38,16 +38,26 @@ TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &
 }
 
 
-void TracedProgram::ptraceContinue() {
-  long rc = ptrace(PTRACE_CONT, traced_pid, 0, 0);
-  ExclusiveIO::debug_f("ptraceContinue(): %d\n", rc);
-  getProcessStatus();
+void TracedProgram::ptraceContinue(bool lock) {
+  if (isTrappedAtBreakpoint())
+    getHitBreakpoint().disable();
+  ExclusiveIO::debug_f("TracedProgram::ptraceContinue(): locking.\n");
+  if (lock)
+    ExclusiveIO::lockPrint();
+  ptrace(PTRACE_CONT, traced_pid, 0, 0);
+  waitAndUpdateStatus();
+  if (lock)
+    ExclusiveIO::unlockPrint();
+  ExclusiveIO::debug_f("TracedProgram::ptraceContinue(): unlocking.\n");
 }
 
 void TracedProgram::ptraceStep() {
+  ExclusiveIO::lockPrint();
   long rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
   ExclusiveIO::debug_f("ptraceStep(): %d\n", rc);
-  getProcessStatus();
+  waitAndUpdateStatus();
+  ExclusiveIO::unlockPrint();
+  showStatus();
 }
 
 void TracedProgram::showStatus() const {
@@ -56,11 +66,8 @@ void TracedProgram::showStatus() const {
       isAlive(), isStopped(), isTrapped(), isExiting());
 }
 
-void TracedProgram::getProcessStatus() {
-  ExclusiveIO::debug_f("> getProcessStatus()\n");
+void TracedProgram::waitAndUpdateStatus() {
   waitpid(traced_pid, &cached_status, 0);
-  ExclusiveIO::debug_f("< getProcessStatus(): %d\n", cached_status);
-  showStatus();
 }
 
 bool TracedProgram::isDead() const {
@@ -159,7 +166,7 @@ std::string getOutputFromExec(const char *cmd) {
   return result;
 }
 
-constexpr auto objdump_cmd_format = "objdump -C -D -w --prefix-address --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
+constexpr auto objdump_cmd_format = "objdump -C -D -w --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
 
 std::string TracedProgram::dumpAt(addr_t address, addr_t offset) const {
   std::string cmd;
@@ -172,7 +179,6 @@ std::string TracedProgram::dumpAt(addr_t address, addr_t offset) const {
 std::string TracedProgram::dumpAtCurrent(addr_t offset) const {
   return dumpAt(getElfIP(), offset);
 }
-
 
 
 

@@ -42,13 +42,6 @@ private:
     inline static synchronisation_mutex_t *synchronisation_map;
     inline static std::ofstream log_ofstream;
 
-    static void lockPrint() {
-      pthread_mutex_lock(&synchronisation_map->print_mutex);
-    }
-
-    static void unlockPrint() {
-      pthread_mutex_unlock(&synchronisation_map->print_mutex);
-    }
 
     static void lockLogPrint() {
       pthread_mutex_lock(&synchronisation_map->log_print_mutex);
@@ -111,6 +104,14 @@ public:
     static void initialize(pid_t parentPid);
 
     static void terminate();
+
+    static void lockPrint() {
+      pthread_mutex_lock(&synchronisation_map->print_mutex);
+    }
+
+    static void unlockPrint() {
+      pthread_mutex_unlock(&synchronisation_map->print_mutex);
+    }
 
 #pragma region Formatted print
 
@@ -181,6 +182,7 @@ public:
     }
 
 #pragma endregion
+
 
     template<typename T>
     static void input(T &buf) {
