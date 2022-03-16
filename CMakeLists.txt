@@ -10,6 +10,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern ${CMAKE_MODULE_PATH})
 # CMake known libraries:
 find_package(TBB REQUIRED)
 find_package(Threads REQUIRED)
+FIND_PACKAGE(Boost REQUIRED)
 
 # Libunwind:
 find_package(Libunwind REQUIRED)

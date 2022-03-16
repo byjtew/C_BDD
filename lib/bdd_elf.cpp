@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <execution>
+#include <boost/core/demangle.hpp>
 
 #include "bdd_elf.hpp"
 
@@ -304,7 +305,8 @@ std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) const {
 }
 
 std::string ElfFile::getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) const {
-  return getNameFromStringTable(sHeader.sh_link, sym.st_name);
+  auto raw_name = getNameFromStringTable(sHeader.sh_link, sym.st_name);
+  return boost::core::demangle(raw_name.c_str());
 }
 
 std::string ElfFile::getSymbolBindingAsString(const Elf_SymRef &sym) {
