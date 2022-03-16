@@ -30,9 +30,14 @@
 #include <cstdarg>
 #include <fcntl.h>
 #include <fstream>
+#include <libunwind-ptrace.h>
+#include <queue>
 
 #include "bdd_elf.hpp"
 #include "bdd_exclusive_io.hpp"
+
+constexpr unsigned max_stack_size = 256;
+
 
 using instr_t = long;
 
@@ -64,10 +69,9 @@ public:
 
 class TracedProgram {
 private:
+    unw_cursor_t unwind_cursor;
     addr_t ram_start_address = 0;
     std::string elf_file_path;
-
-
     elf::ElfFile elf_file;
     pid_t traced_pid;
     int cached_status = 0;
@@ -81,7 +85,9 @@ private:
 
     void waitAndUpdateStatus();
 
-    void attachBDD(int &status);
+    void attachUnwind();
+
+    void attachPtrace(int &status);
 
     [[nodiscard]] addr_t getTracedRAMAddress() const;
 
@@ -153,6 +159,8 @@ public:
     [[nodiscard]] addr_t getElfIP() const;
 
     [[nodiscard]] Breakpoint &getHitBreakpoint();
+
+    [[nodiscard]] std::queue<std::pair<addr_t, std::string>> backtrace();
 };
 
 #endif //C_BDD_BDD_PTRACE_HPP

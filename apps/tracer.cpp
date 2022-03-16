@@ -19,6 +19,20 @@ void printFunctionsList(std::vector<std::pair<addr_t, std::string>> &functionsLi
   });
 }
 
+void printStack(std::queue<std::pair<addr_t, std::string>> &parsedStack) {
+  ExclusiveIO::debug_f("::printStack()\n");
+  std::string msg, row;
+  while (!parsedStack.empty()) {
+    auto top = parsedStack.front();
+    row.resize(512);
+    auto size = std::sprintf(row.data(), "[0x%016lX]: %s\n", top.first, top.second.c_str());
+    row.resize(size);
+    msg.append(row);
+    parsedStack.pop();
+  }
+  ExclusiveIO::info_f("Stack:\n%s\n", msg.c_str());
+}
+
 void command_loop(TracedProgram &traced) {
   bool force_end = false;
   std::string choice, choice_param;
@@ -71,6 +85,9 @@ void command_loop(TracedProgram &traced) {
     } else if (choice == "step") {
       ExclusiveIO::info_f("Stepping program.\n");
       traced.ptraceStep();
+    } else if (choice == "stack" || choice == "s") {
+      auto stack = traced.backtrace();
+      printStack(stack);
     } else if (choice == "dump") {
       ExclusiveIO::info_f("Dumping current IP program area:\n");
       ExclusiveIO::infoHigh_nf("\n", traced.dumpAtCurrent(), "\n");
