@@ -6,15 +6,18 @@
 #include "bdd_ptrace.hpp"
 
 void TracedProgram::initChild(std::vector<char *> &parameters) {
+  usleep(50000); // 50 ms wait, so the BDD (parent process) can attach.
+  ExclusiveIO::debug_f("TracedProgram::initChild()\n");
   int status;
   ptrace(PTRACE_TRACEME, &status, 0);
-  ExclusiveIO::info_f("ready, pid=%u\n", getpid());
   parameters.push_back(nullptr);
+  ExclusiveIO::info_f("ready, pid=%u\n", getpid());
   execve(elf_file_path.c_str(), parameters.data(), nullptr);
   ExclusiveIO::info_f("exit.\n");
 }
 
 void TracedProgram::initBDD() {
+  ExclusiveIO::debug_f("TracedProgram::initBDD()\n");
   int status;
   attachPtrace(status);
   ram_start_address = getTracedRAMAddress();
