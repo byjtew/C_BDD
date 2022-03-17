@@ -1,1 +1,2 @@
 add_executable(stable_program stable_program.cpp)
+add_executable(segfault_program segfault_program.c)

@@ -38,6 +38,7 @@ void command_loop(TracedProgram &traced) {
   std::string choice, choice_param;
   choice.reserve(20);
   ExclusiveIO::info_f("Debug ready.\n");
+
   do {
     choice.clear();
     choice_param.clear();
@@ -45,6 +46,9 @@ void command_loop(TracedProgram &traced) {
       ExclusiveIO::info_f("The program exited normally.\n");
     else if (traced.isTrappedAtBreakpoint()) {
       ExclusiveIO::info_f("The program hit a breakpoint.\n");
+    } else if (traced.isSegfault()) {
+      auto seg_data = traced.getSegfaultData();
+      ExclusiveIO::info_f("The program has a segfault: %s (at 0x%016lX)\n", seg_data.first.c_str(), seg_data.second);
     }
 
     ExclusiveIO::info_f("$ : ");
@@ -91,6 +95,8 @@ void command_loop(TracedProgram &traced) {
     } else if (choice == "dump") {
       ExclusiveIO::info_f("Dumping current IP program area:\n");
       ExclusiveIO::infoHigh_nf("\n", traced.dumpAtCurrent(), "\n");
+    } else if (choice == "status") {
+      traced.showStatus();
     } else if (choice == "stop") {
       ExclusiveIO::info_f("Killing program.\n");
       traced.stop();

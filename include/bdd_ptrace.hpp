@@ -95,6 +95,10 @@ private:
 
     void resumeBreakpoint();
 
+    static void printSiginfo_t(const siginfo_t &info);
+
+    static std::string getSegfaultCodeAsString(siginfo_t &info);
+
 public:
     TracedProgram(const std::string &exec_path, std::vector<char *> &parameters);
 
@@ -162,6 +166,10 @@ public:
     [[nodiscard]] Breakpoint &getHitBreakpoint();
 
     [[nodiscard]] std::queue<std::pair<addr_t, std::string>> backtrace();
+
+    bool isSegfault() const;
+
+    std::pair<std::string, addr_t> getSegfaultData() const;
 };
 
 #endif //C_BDD_BDD_PTRACE_HPP
