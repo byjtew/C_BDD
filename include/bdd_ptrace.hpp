@@ -133,11 +133,11 @@ public:
       return elf_file;
     }
 
-    void stop() const;
+    void stopTraced() const;
 
-    void rerun(std::vector<char *> &args);
+    void run(std::vector<char *> &parameters);
 
-    void rerun();
+    void run();
 
 
     void showStatus() const;
@@ -149,8 +149,6 @@ public:
     void setBreakpoint(Breakpoint &bp);
 
     [[nodiscard]] bool isTrappedAtBreakpoint() const;
-
-    void clearLoadedElf();
 
     bool breakpointAtAddress(const std::string &strAddress);
 
@@ -173,6 +171,10 @@ public:
     std::pair<std::string, addr_t> getSegfaultData() const;
 
     [[maybe_unused]] std::optional<user_regs_struct> getRegisters() const;
+
+    void clearCurrentProcess();
+
+    void killTraced() const;
 };
 
 #endif //C_BDD_BDD_PTRACE_HPP

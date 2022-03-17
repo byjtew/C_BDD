@@ -48,6 +48,11 @@ void printStack(std::queue<std::pair<addr_t, std::string>> &parsedStack) {
   ExclusiveIO::info_f("Stack:\n%s\n", msg.c_str());
 }
 
+void restart(TracedProgram &traced) {
+  ExclusiveIO::info_f("Re-launching the program.\n");
+  traced.run();
+}
+
 void command_loop(TracedProgram &traced) {
   bool force_end = false;
   std::string choice, choice_param;
@@ -68,18 +73,24 @@ void command_loop(TracedProgram &traced) {
 
     ExclusiveIO::info_f("$ : ");
     ExclusiveIO::input(choice);
+    // TODO: Parse input char-by-char to handle optional parameters
 
     if (choice == "run") {
       if (traced.isDead() || traced.isExiting()) {
         ExclusiveIO::info_f("Re-run the program [Y/n]: ");
         ExclusiveIO::input(choice_param);
         if (choice_param == "y" || choice_param == "Y")
-          traced.rerun();
+          restart(traced);
 
       } else {
         ExclusiveIO::info_f("Continuing program.\n");
         traced.ptraceContinue();
       }
+    } else if ((choice == "restart") && (traced.isAlive() && !traced.isExiting())) {
+      ExclusiveIO::info_f("Restart the program [Y/n]: ");
+      ExclusiveIO::input(choice_param);
+      if (choice_param == "y" || choice_param == "Y")
+        restart(traced);
     } else if (choice.starts_with("bp")) {
       ExclusiveIO::input(choice_param);
 
@@ -100,7 +111,7 @@ void command_loop(TracedProgram &traced) {
       ExclusiveIO::info_f("Current pointer address: 0x%016lX\n", traced.getIP());
     } else if (choice == "functions") {
       auto functionsList = traced.getElfFile().getFunctionsList();
-      printFunctionsList(functionsList, false);
+      printFunctionsList(functionsList, choice_param == "full");
     } else if (choice == "step") {
       ExclusiveIO::info_f("Stepping program.\n");
       traced.ptraceStep();
@@ -136,9 +147,9 @@ void command_loop(TracedProgram &traced) {
         ExclusiveIO::error_f("Unknown index.\n");
       }
       traced.showStatus();
-    } else if (choice == "stop") {
+    } else if (choice == "stopTraced") {
       ExclusiveIO::info_f("Killing program.\n");
-      traced.stop();
+      traced.stopTraced();
       force_end = true;
     } else {
       ExclusiveIO::error_f("Unknown command.\n");
@@ -158,6 +169,6 @@ int main(int argc, char **argv) {
     params.emplace_back(argv[i]);
   auto traced = TracedProgram(std::string(argv[1]), params);
   command_loop(traced);
-  traced.stop();
+  traced.stopTraced();
   return 0;
 }

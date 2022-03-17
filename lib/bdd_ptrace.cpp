@@ -48,7 +48,7 @@ TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &
 
   ExclusiveIO::initialize(getpid());
 
-  rerun(parameters);
+  run(parameters);
 }
 
 
@@ -138,15 +138,22 @@ std::string TracedProgram::getTrapName() const {
   return "Not implemented.";
 }
 
-void TracedProgram::stop() const {
+void TracedProgram::stopTraced() const {
+  if (isDead()) return;
+  ExclusiveIO::debug_f("Stopping the program.\n");
+  kill(traced_pid, SIGSTOP);
+}
+
+void TracedProgram::killTraced() const {
   if (isDead()) return;
   ExclusiveIO::debug_f("Killing the program.\n");
   kill(traced_pid, SIGKILL);
 }
 
-void TracedProgram::rerun(std::vector<char *> &parameters) {
-  if (isAlive()) stop();
-  clearLoadedElf();
+void TracedProgram::run(std::vector<char *> &parameters) {
+  if (isAlive())
+    clearCurrentProcess();
+
   do {
     traced_pid = fork();
     switch (traced_pid) {
@@ -163,13 +170,20 @@ void TracedProgram::rerun(std::vector<char *> &parameters) {
   } while (traced_pid == -1 && errno == EAGAIN);
 }
 
-void TracedProgram::rerun() {
+void TracedProgram::run() {
   std::vector<char *> args_empty;
-  rerun(args_empty);
+  run(args_empty);
 }
 
-void TracedProgram::clearLoadedElf() {
-  // TODO: Well...
+void TracedProgram::clearCurrentProcess() {
+  stopTraced();
+  usleep(200000); // 200 ms
+  if (isAlive())
+    killTraced();
+  breakpointsMap.clear();
+  ram_start_address = 0;
+  traced_pid = 0;
+  cached_status = 0;
 }
 
 addr_t TracedProgram::getTracedRAMAddress() const {
@@ -205,12 +219,12 @@ std::string getOutputFromExec(const char *cmd) {
   return result;
 }
 
-constexpr auto objdump_cmd_format = "objdump -C -D -S -w --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
+constexpr auto objdump_cmd_format = "objdump -C -D -S -l -w --start-address=0x%016lX --stopTraced-address=0x%016lX %s | tail -n+6";
 
 std::string TracedProgram::dumpAt(addr_t address, addr_t offset) const {
   std::string cmd;
   cmd.resize(256);
-  auto size = sprintf(cmd.data(), objdump_cmd_format, address - offset / 2, address + 5 * offset,
+  auto size = sprintf(cmd.data(), objdump_cmd_format, address - 2, address + offset,
                       elf_file_path.c_str());
   cmd.resize(size);
   return getOutputFromExec(cmd.c_str());

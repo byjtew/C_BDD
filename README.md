@@ -47,6 +47,7 @@ Before typing any fo theses commands, you should run the debugger:\
 `./bin/C_BDD <traced-program-path>`
 
 - `r`/`run`: Run the traced program
+- `restart`: Restart the traced program from the beginning
 - `stop`: Try to stop the traced program
 - `kill`: Force the traced program to stop (a memory leak issue may occur)
 - `status`: Display the overall traced program status
