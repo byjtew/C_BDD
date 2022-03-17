@@ -338,7 +338,7 @@ std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
       auto address = symbolSectionData.st_value;
       auto name = getSymbolName(sHdr, symbolSectionData);
       if (!name.empty())
-        functions.emplace_back(address, name);
+        functions.emplace_back(address, name.substr(0, name.find('(')));
     }
   }
   return functions;
