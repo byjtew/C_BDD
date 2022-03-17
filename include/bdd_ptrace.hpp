@@ -106,6 +106,8 @@ private:
 
     static std::string getSegfaultCodeAsString(siginfo_t &info);
 
+    long ptraceRawStep();
+
 public:
     TracedProgram(const std::string &exec_path, std::vector<char *> &parameters);
 

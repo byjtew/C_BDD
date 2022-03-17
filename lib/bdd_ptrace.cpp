@@ -56,7 +56,7 @@ void TracedProgram::resumeBreakpoint() {
   auto bp = getHitBreakpoint();
   bp.disable();
   ptraceBackwardStep();
-  ptraceStep();
+  ptraceRawStep();
   bp.enable();
 }
 
@@ -82,12 +82,20 @@ void TracedProgram::ptraceBackwardStep() const {
 
 void TracedProgram::ptraceStep() {
   ExclusiveIO::debug_f("TracedProgram::ptraceStep()\n");
+  if (isTrappedAtBreakpoint())
+    resumeBreakpoint();
+  else
+    ptraceRawStep();
+  showStatus();
+}
+
+long TracedProgram::ptraceRawStep() {
+  ExclusiveIO::debug_f("TracedProgram::ptraceRawStep()\n");
   ExclusiveIO::lockPrint();
   long rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
   waitAndUpdateStatus();
   ExclusiveIO::unlockPrint();
-  ExclusiveIO::debug_f("TracedProgram::ptraceStep(): %ld\n", rc);
-  showStatus();
+  return rc;
 }
 
 void TracedProgram::showStatus() const {
