@@ -100,6 +100,7 @@ public:
 
 
     ~TracedProgram() {
+      ptrace(PTRACE_DETACH, traced_pid, 0, 0);
       ExclusiveIO::terminate();
     }
 
