@@ -345,9 +345,10 @@ std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
 
 addr_t ElfFile::getFunctionAddress(const std::string &fct_name) const {
   auto list = getFunctionsList();
-  return std::find_if(std::execution::par, list.cbegin(), list.cend(), [fct_name](const auto &e) {
-      return e.second == fct_name;
-  })->first;
+  return std::find_if(std::execution::par, list.cbegin(), list.cend(),
+                      [fct_name](const std::pair<addr_t, std::string> &e) {
+                          return e.second == fct_name || e.second.substr(0, e.second.find("(")) == fct_name;
+                      })->first;
 }
 
 unsigned ElfFile::getSymbolCount(const Elf_Shdr &sHdr) {
