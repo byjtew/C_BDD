@@ -147,9 +147,22 @@ void command_loop(TracedProgram &traced) {
         ExclusiveIO::error_f("Unknown index.\n");
       }
       traced.showStatus();
-    } else if (choice == "stopTraced") {
-      ExclusiveIO::info_f("Killing program.\n");
+    } else if (choice == "stop") {
+      ExclusiveIO::info_f("Stopping program.\n");
       traced.stopTraced();
+      usleep(200000);
+      if (traced.isAlive()) {
+        ExclusiveIO::info_f("The program doesn't stop, do you want to force it [Y/n]: \n");
+        ExclusiveIO::input(choice_param);
+        if (choice_param.starts_with('Y') || choice_param.starts_with('y')) {
+          traced.killTraced();
+          force_end = true;
+        }
+      } else
+        force_end = true;
+    } else if (choice == "kill") {
+      ExclusiveIO::info_f("Killing program.\n");
+      traced.killTraced();
       force_end = true;
     } else {
       ExclusiveIO::error_f("Unknown command.\n");
