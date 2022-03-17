@@ -123,6 +123,11 @@ namespace elf {
         [[nodiscard]] Elf_SymRef getSymbolSectionAt(unsigned int index, unsigned offset) const;
 
         [[nodiscard]] std::vector<std::pair<addr_t, std::string>> getFunctionsList() const;
+
+        /**
+         * Find every Elf section's type & name, both as strings
+         */
+        [[nodiscard]] std::vector<std::pair<std::string, std::string>> getSymbolsNames() const;
     };
 
 

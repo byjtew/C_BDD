@@ -114,6 +114,28 @@ void command_loop(TracedProgram &traced) {
       printRegisters(traced.getRegisters());
     } else if (choice == "status") {
       traced.showStatus();
+    } else if (choice == "elf") {
+      auto types_and_names = traced.getElfFile().getSymbolsNames();
+      std::string hint("Elf available informations:\n1. Program header\n");
+      std::vector<std::string> possibles_index;
+      int index = 2;
+      std::for_each(types_and_names.cbegin(), types_and_names.cend(), [&possibles_index, &index, &hint](const auto &e) {
+          hint.append(std::to_string(index) + ". Section <" + e.second + ">\n");
+          possibles_index.push_back(std::to_string(index));
+          index += 1;
+      });
+      ExclusiveIO::infoHigh_nf(hint);
+      ExclusiveIO::infoHigh_nf("Type the index that you want to display: ");
+      ExclusiveIO::input(choice_param);
+      if (choice_param == "1") {
+        traced.getElfFile().printHeader();
+      } else if (std::find(possibles_index.cbegin(), possibles_index.cend(), choice_param) != possibles_index.cend()) {
+        int asked_index = (int) strtoul(choice_param.c_str(), nullptr, 0);
+        traced.getElfFile().printSectionHeaderAt(asked_index - 2);
+      } else {
+        ExclusiveIO::error_f("Unknown index.\n");
+      }
+      traced.showStatus();
     } else if (choice == "stop") {
       ExclusiveIO::info_f("Killing program.\n");
       traced.stop();

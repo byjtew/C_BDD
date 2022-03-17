@@ -165,6 +165,7 @@ std::string ElfFile::getSectionTypeAsString(const Elf_Shdr &sHeader) {
 }
 
 void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
+  if (index < 0 || index >= sectionsHeaders.size()) return;
   auto sHeader = sectionsHeaders.at(index);
   fprintf
       (fp,
@@ -354,6 +355,14 @@ addr_t ElfFile::getFunctionAddress(const std::string &fct_name) const {
 
 unsigned ElfFile::getSymbolCount(const Elf_Shdr &sHdr) {
   return (unsigned) sHdr.sh_size / sHdr.sh_entsize;
+}
+
+std::vector<std::pair<std::string, std::string>> ElfFile::getSymbolsNames() const {
+  std::vector<std::pair<std::string, std::string>> names;
+  std::for_each(sectionsHeaders.begin(), sectionsHeaders.end(), [this, &names](const Elf_Shdr &e) {
+      names.emplace_back(getSectionTypeAsString(e), getSectionName(e));
+  });
+  return names;
 }
 
 
