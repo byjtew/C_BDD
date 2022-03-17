@@ -9,7 +9,7 @@ C_BDD is a free and open source program analysis tool written in C++, for UNIX s
 
 - [X] **Program execution**: Run - Pause - Stop
 - [X] **ELF**: Display headers and sections
-- [ ] **Segmentation faults**: Catch and analyse
+- [X] **Segmentation faults**: Catch and analyse
 - [X] **Stack**: Display
 - [ ] **Register values**: Display
 - [ ] **Function parameters**: Display
@@ -17,7 +17,7 @@ C_BDD is a free and open source program analysis tool written in C++, for UNIX s
 - [ ] **Local variables**: Display
 - [X] **Program assembly**: Display entirely or a restricted section
 - [X] **C/C++ program**: Display entirely or a restricted section
-- [ ] **Breakpoint**: Stop the program before a function, line or address
+- [X] **Breakpoint**: Stop the program before a function or elf-address
 - [ ] **Memory**: Display and trace (de-)allocation
 
 ## Quick start
