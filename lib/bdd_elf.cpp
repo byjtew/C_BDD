@@ -334,6 +334,7 @@ std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
     Elf_Shdr sHdr = sectionsHeaders.at(e);
     for (unsigned i = 0; i < getSymbolCount(sHdr); i++) {
       Elf_SymRef symbolSectionData = getSymbolSectionAt(e, i * sHdr.sh_entsize);
+      if ((symbolSectionData.st_info & 0x0F) != Elf_SymbolTypeFunctionEntryPoint) continue;
       auto address = symbolSectionData.st_value;
       auto name = getSymbolName(sHdr, symbolSectionData);
       if (!name.empty())
