@@ -10,6 +10,21 @@
 #include "bdd_ptrace.hpp"
 #include "bdd_exclusive_io.hpp"
 
+void printRegisters(std::optional<user_regs_struct> reg) {
+  if (!reg)
+    return ExclusiveIO::error_f("Impossible to read registers.\n");
+#ifdef __x86_64__
+  ExclusiveIO::info_f(
+      "Registers [64-bits]:\nrsi: \t\t%llu\nrdi: \t\t%llu\nrip: \t\t%llu\nr[a-d]x: \t%llu %llu %llu %llu\nr[8-15]: \t%llu %llu %llu %llu %llu %llu %llu %lu\n\n",
+      reg->rsi, reg->rdi, reg->rip, reg->rax, reg->rbx, reg->rcx, reg->rdx, reg->r8, reg->r9, reg->r10, reg->r11,
+      reg->r12,
+      reg->r13, reg->r14, reg->r15);
+#else
+  ExclusiveIO::info_f("Registers [32-bits]:\nesi: \t\t%lu\nedi: \t\t%lu\neip: \t\t%lu\nr[a-d]x: \t%lu %lu %lu %lu\n\n", reg->esi,
+                      reg->edi, reg->eip, reg->eax, reg->ebx, reg->ecx, reg->edx);
+#endif
+}
+
 void printFunctionsList(std::vector<std::pair<addr_t, std::string>> &functionsList, bool full_details) {
   ExclusiveIO::debug_f("::printFunctionsList()\n");
   ExclusiveIO::info_f("Functions:\n");
@@ -95,6 +110,8 @@ void command_loop(TracedProgram &traced) {
     } else if (choice == "dump") {
       ExclusiveIO::info_f("Dumping current IP program area:\n");
       ExclusiveIO::infoHigh_nf("\n", traced.dumpAtCurrent(), "\n");
+    } else if (choice == "reg" || choice == "registers") {
+      printRegisters(traced.getRegisters());
     } else if (choice == "status") {
       traced.showStatus();
     } else if (choice == "stop") {
@@ -102,7 +119,7 @@ void command_loop(TracedProgram &traced) {
       traced.stop();
       force_end = true;
     } else {
-      ExclusiveIO::info_f("Unknown command.\n");
+      ExclusiveIO::error_f("Unknown command.\n");
     }
   } while (traced.isAlive() && !force_end);
   ExclusiveIO::info_f("End of the debug_f.\n");

@@ -2,6 +2,7 @@
 // Created by byjtew on 12/03/2022.
 //
 
+#include <sys/user.h>
 #include "bdd_ptrace.hpp"
 
 void TracedProgram::initChild(std::vector<char *> &parameters) {
@@ -324,5 +325,10 @@ std::string TracedProgram::getSegfaultCodeAsString(siginfo_t &info) {
   }
 }
 
-
+std::optional<user_regs_struct> TracedProgram::getRegisters() const {
+  user_regs_struct regs{};
+  auto pc = ptrace(PTRACE_GETREGS, traced_pid, nullptr, &regs);
+  if (pc < 0) return std::nullopt;
+  return regs;
+}
 

@@ -32,6 +32,7 @@
 #include <fstream>
 #include <libunwind-ptrace.h>
 #include <queue>
+#include <sys/user.h>
 
 #include "bdd_elf.hpp"
 #include "bdd_exclusive_io.hpp"
@@ -170,6 +171,8 @@ public:
     bool isSegfault() const;
 
     std::pair<std::string, addr_t> getSegfaultData() const;
+
+    [[maybe_unused]] std::optional<user_regs_struct> getRegisters() const;
 };
 
 #endif //C_BDD_BDD_PTRACE_HPP
