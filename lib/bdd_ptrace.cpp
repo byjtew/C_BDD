@@ -133,11 +133,6 @@ bool TracedProgram::isExiting() const {
   return event == PTRACE_EVENT_EXIT;
 }
 
-// TODO: TracedProgram::getTrapName()
-std::string TracedProgram::getTrapName() const {
-  return "Not implemented.";
-}
-
 void TracedProgram::stopTraced() const {
   if (isDead()) return;
   ExclusiveIO::debug_f("Stopping the program.\n");

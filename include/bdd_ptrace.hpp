@@ -48,9 +48,11 @@ private:
     pid_t program_pid;
     addr_t address;
     instr_t original;
+    std::string name;
+
 public:
 
-    Breakpoint(pid_t pid, const addr_t &addr);
+    explicit Breakpoint(pid_t pid, const addr_t &addr, const std::string &func_name = "Unknown");
 
     bool enable();
 
@@ -64,6 +66,10 @@ public:
 
     [[nodiscard]] instr_t getOriginal() const {
       return original;
+    }
+
+    [[nodiscard]] std::string getName() const {
+      return name;
     }
 };
 
@@ -139,10 +145,7 @@ public:
 
     void run();
 
-
     void showStatus() const;
-
-    [[nodiscard]] std::string getTrapName() const;
 
     [[nodiscard]] bool isExiting() const;
 
@@ -152,7 +155,7 @@ public:
 
     bool breakpointAtAddress(const std::string &strAddress);
 
-    bool breakpointAtAddress(addr_t address);
+    bool breakpointAtAddress(addr_t address, std::optional<std::string> func_name);
 
     void printBreakpointsMap() const;
 
