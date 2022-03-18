@@ -10,6 +10,15 @@
 #include "bdd_ptrace.hpp"
 #include "bdd_exclusive_io.hpp"
 
+std::vector<std::string> readInput() {
+  std::vector<std::string> words;
+  std::string sentence, word;
+  std::getline(std::cin, sentence);
+  std::istringstream iss(sentence);
+  while (iss >> word) words.push_back(word);
+  return words;
+}
+
 void printRegisters(std::optional<user_regs_struct> reg) {
   if (!reg)
     return ExclusiveIO::error_f("Impossible to read registers.\n");
@@ -55,13 +64,12 @@ void restart(TracedProgram &traced) {
 
 void command_loop(TracedProgram &traced) {
   bool force_end = false;
-  std::string choice, choice_param;
-  choice.reserve(20);
+  std::vector<std::string> input;
+  std::string validation_input;
   ExclusiveIO::info_f("Debug ready.\n");
 
   do {
-    choice.clear();
-    choice_param.clear();
+    input.clear();
     if (traced.isExiting())
       ExclusiveIO::info_f("The program exited normally.\n");
     else if (traced.isTrappedAtBreakpoint()) {
@@ -72,14 +80,16 @@ void command_loop(TracedProgram &traced) {
     }
 
     ExclusiveIO::info_f("$ : ");
-    ExclusiveIO::input(choice);
-    // TODO: Parse input char-by-char to handle optional parameters
+    input = readInput();
 
+    // TODO: Parse input char-by-char to handle optional parameters
+    std::string choice = input.at(0);
     if (choice == "run") {
       if (traced.isDead() || traced.isExiting()) {
         ExclusiveIO::info_f("Re-run the program [Y/n]: ");
-        ExclusiveIO::input(choice_param);
-        if (choice_param == "y" || choice_param == "Y")
+
+        ExclusiveIO::input(validation_input);
+        if (validation_input == "y" || validation_input == "Y")
           restart(traced);
 
       } else {
@@ -88,30 +98,33 @@ void command_loop(TracedProgram &traced) {
       }
     } else if ((choice == "restart") && (traced.isAlive() && !traced.isExiting())) {
       ExclusiveIO::info_f("Restart the program [Y/n]: ");
-      ExclusiveIO::input(choice_param);
-      if (choice_param == "y" || choice_param == "Y")
+      ExclusiveIO::input(validation_input);
+      if (validation_input == "y" || validation_input == "Y")
         restart(traced);
     } else if (choice.starts_with("bp")) {
-      ExclusiveIO::input(choice_param);
-
-      if (choice_param.starts_with("0x")) { // Hex choice
-        ExclusiveIO::debug_f("Placing bp by address at: 0x%016lX\n", choice_param.c_str());
-        if (!traced.breakpointAtAddress(choice_param))
-          ExclusiveIO::error_f("Breakpoint[%s] failed: wrong address.\n");
-        else
-          ExclusiveIO::info_f("Breakpoint[%s] placed.\n", choice_param.c_str());
-      } else { // Name choice
-        ExclusiveIO::debug_f("Placing bp by function name: %s\n", choice_param.c_str());
-        if (!traced.breakpointAtFunction(choice_param))
-          ExclusiveIO::error_f("Breakpoint[%s] failed: function does not exists.\n");
-        else
-          ExclusiveIO::info_f("Breakpoint[%s] placed.\n", choice_param.c_str());
+      if (input.size() == 1) {
+        // ShowUsage("bp");
+      } else {
+        std::string bp_choice = input.at(1);
+        if (bp_choice.starts_with("0x")) { // Hex choice
+          ExclusiveIO::debug_f("Placing bp by address at: 0x%016lX\n", bp_choice.c_str());
+          if (!traced.breakpointAtAddress(bp_choice))
+            ExclusiveIO::error_f("Breakpoint[%s] failed: wrong address.\n");
+          else
+            ExclusiveIO::info_f("Breakpoint[%s] placed.\n", bp_choice.c_str());
+        } else { // Name choice
+          ExclusiveIO::debug_f("Placing bp by function name: %s\n", bp_choice.c_str());
+          if (!traced.breakpointAtFunction(bp_choice))
+            ExclusiveIO::error_f("Breakpoint[%s] failed: function does not exists.\n");
+          else
+            ExclusiveIO::info_f("Breakpoint[%s] placed.\n", bp_choice.c_str());
+        }
       }
     } else if (choice == "ip" || choice == "rip" || choice == "eip") {
       ExclusiveIO::info_f("Current pointer address: 0x%016lX\n", traced.getIP());
     } else if (choice == "functions") {
       auto functionsList = traced.getElfFile().getFunctionsList();
-      printFunctionsList(functionsList, true || choice_param == "full");
+      printFunctionsList(functionsList, (input.size() > 1 && input.at(1).starts_with("full")));
     } else if (choice == "step") {
       ExclusiveIO::info_f("Stepping program.\n");
       traced.ptraceStep();
@@ -137,11 +150,13 @@ void command_loop(TracedProgram &traced) {
       });
       ExclusiveIO::infoHigh_nf(hint);
       ExclusiveIO::infoHigh_nf("Type the index that you want to display: ");
-      ExclusiveIO::input(choice_param);
-      if (choice_param == "1") {
+      std::string index_selected;
+      ExclusiveIO::input(index_selected);
+      if (index_selected == "1") {
         traced.getElfFile().printHeader();
-      } else if (std::find(possibles_index.cbegin(), possibles_index.cend(), choice_param) != possibles_index.cend()) {
-        int asked_index = (int) strtoul(choice_param.c_str(), nullptr, 0);
+      } else if (std::find(possibles_index.cbegin(), possibles_index.cend(), index_selected) !=
+                 possibles_index.cend()) {
+        int asked_index = (int) strtoul(index_selected.c_str(), nullptr, 0);
         traced.getElfFile().printSectionHeaderAt(asked_index - 2);
       } else {
         ExclusiveIO::error_f("Unknown index.\n");
@@ -153,8 +168,8 @@ void command_loop(TracedProgram &traced) {
       usleep(200000);
       if (traced.isAlive()) {
         ExclusiveIO::info_f("The program doesn't stop, do you want to force it [Y/n]: \n");
-        ExclusiveIO::input(choice_param);
-        if (choice_param.starts_with('Y') || choice_param.starts_with('y')) {
+        ExclusiveIO::input(validation_input);
+        if (validation_input.starts_with('Y') || validation_input.starts_with('y')) {
           traced.killTraced();
           force_end = true;
         }
