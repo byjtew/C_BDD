@@ -7,7 +7,6 @@
 #include <iostream>
 #include <fstream>
 #include <execution>
-#include <boost/core/demangle.hpp>
 
 #include "bdd_elf.hpp"
 
@@ -307,7 +306,7 @@ std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) const {
 
 std::string ElfFile::getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) const {
   auto raw_name = getNameFromStringTable(sHeader.sh_link, sym.st_name);
-  return boost::core::demangle(raw_name.c_str());
+  return raw_name.c_str();
 }
 
 std::string ElfFile::getSymbolBindingAsString(const Elf_SymRef &sym) {
@@ -349,7 +348,7 @@ addr_t ElfFile::getFunctionAddress(const std::string &fct_name) const {
   auto list = getFunctionsList();
   return std::find_if(std::execution::par, list.cbegin(), list.cend(),
                       [fct_name](const std::pair<addr_t, std::string> &e) {
-                          return e.second == fct_name || e.second.substr(0, e.second.find("(")) == fct_name;
+                          return e.second == fct_name;
                       })->first;
 }
 

@@ -1,9 +1,9 @@
-# C_BDD: C/C++ Byjtew Dumb Debugger
+# C_BDD: C Byjtew Dumb Debugger
 
 [![CMake](https://github.com/byjtew/C_BDD/actions/workflows/cmake.yml/badge.svg)](https://github.com/byjtew/C_BDD/actions/workflows/cmake.yml)
 
 C_BDD is a free and open source program analysis tool written in C++, for UNIX system only. It is designed to support C
-& C++ executables.
+executables.
 
 ## Supported features
 
@@ -16,7 +16,6 @@ C_BDD is a free and open source program analysis tool written in C++, for UNIX s
 - [ ] **Global variables**: Display
 - [ ] **Local variables**: Display
 - [X] **Program assembly**: Display entirely or a restricted section
-- [X] **C/C++ program**: Display entirely or a restricted section
 - [X] **Breakpoint**: Stop the program before a function or elf-address
 - [ ] **Memory**: Display and trace (de-)allocation
 
