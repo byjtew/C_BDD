@@ -47,17 +47,17 @@ Before typing any fo theses commands, you should run the debugger:\
 
 - `r`/`run`: Run the traced program
 - `restart`: Restart the traced program from the beginning
+- `s`/`step`: Run one assembly instruction in the traced-program
 - `stop`: Try to stop the traced program
 - `kill`: Force the traced program to stop (a memory leak issue may occur)
 - `status`: Display the overall traced program status
 - `functions <full>`: Display every functions
 - `reg`/`registers`: Display every registers values (as %llu only)
-- `d`/`dump <n>`: Display the program (assembly & C/C++) with the next *n* lines at the current location
-- `df`/`dump full <n>`: More detailed version of: `dump`
-- `s`/`step`: Run one assembly instruction in the traced-program
-- `bp <address|function-name|line>`: Creates a breakpoint at the location
-- `bp off <address|function-name|line>`: Removes a breakpoint at the location
-- `memory`: Show memory allocation status
+- `d`/`dump <n>`: Display the program (assembly + C) with the next *n* lines at the current location
+- `bp <address|function-name|line>`: Creates a breakpoint at the specified location
+- `bp off <address|function-name>`: Removes a breakpoint from the specified location
+- `bt`/`backtrace`: Show the current stack.
+- `elf`: Show elf information about the traced program.
 - `help`: Show help message
 - `version`: Show bugger version
 

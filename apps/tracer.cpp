@@ -62,6 +62,97 @@ void restart(TracedProgram &traced) {
   traced.run();
 }
 
+const std::map<std::string, std::string> usage_map = {
+    {"r",                              "Run the traced program."},
+    {"run",                            "Run the traced program."},
+    {"r / run",                        "Run the traced program."},
+
+    {"s",                              "Run one assembly instruction in the traced-program."},
+    {"step",                           "Run one assembly instruction in the traced-program."},
+    {"s / step",                       "Run one assembly instruction in the traced-program."},
+
+    {"restart",                        "Restart the traced program."},
+
+    {"stop",                           "Force the traced program to stop (SIGKILL). Memory leaks may occur."},
+
+    {"kill",                           "Force the traced program to stop (SIGKILL). Memory leaks may occur."},
+
+    {"status",                         "Display the current state of the traced program (exited/segfault/...)."},
+
+    {"functions",                      "Display every functions in the traced program."},
+    {"functions <full>",               "Display every functions in the traced program."},
+
+    {"reg",                            "Display every registers values (as %llu only)."},
+    {"registers",                      "Display every registers values (as %llu only)."},
+    {"reg / registers",                "Display every registers values (as %llu only)."},
+
+    {"d",                              "Display the program (assembly & C) with the next n lines from the current location."},
+    {"dump",                           "Display the program (assembly & C) with the next n lines from the current location."},
+    {"d / dump <n>",                   "Display the program (assembly & C) with the next n lines from the current location."},
+
+    {"bp",                             "Creates a breakpoint at the specified location."},
+    {"bp <address|function-name>",     "Creates a breakpoint at the specified location."},
+
+    {"bp off",                         "Removes a breakpoint from the specified location."},
+    {"bp off <address|function-name>", "Removes a breakpoint from the specified location."},
+
+    {"bt",                             "Show the current stack."},
+    {"backtrace",                      "Show the current stack."},
+    {"bt / backtrace",                 "Show the current stack."},
+
+    {"elf",                            "Show elf information about the traced program."},
+
+    {"help",                           "Show this page."},
+    {"man",                            "Show this page."},
+    {"help / man",                     "Show this page."},
+
+    {"version",                        "Show the debugger version."},
+};
+
+void print_unknwon_commad() {
+  ExclusiveIO::error_f("\nUnknwon command. Use 'man' to view every available commands.\n");
+}
+
+void show_usage_for(const std::string &command) {
+  auto it = usage_map.find(command);
+  if (it == usage_map.end()) return print_unknwon_commad();
+  ExclusiveIO::error_nf("Usage:\n", it->first, "\t\t ", it->second, "\n\n");
+}
+
+void print_man() {
+  ExclusiveIO::infoHigh_nf("\n\nCommands:\n"
+                           "r, run \t\t\t\t\t\t\t ", usage_map.at("r"), "\n",
+                           "s, step \t\t\t\t\t\t ", usage_map.at("s"), "\n",
+                           "restart\t\t\t\t\t\t\t ", usage_map.at("restart"), "\n",
+                           "stop   \t\t\t\t\t\t\t ", usage_map.at("stop"), "\n",
+                           "kill   \t\t\t\t\t\t\t ", usage_map.at("kill"), "\n",
+                           "status \t\t\t\t\t\t\t ", usage_map.at("status"), "\n",
+                           "functions <full>\t\t\t\t ", usage_map.at("functions"), "\n",
+                           "reg, registers\t\t\t\t\t ", usage_map.at("reg"), "\n",
+                           "d, dump <n> \t\t\t\t\t ", usage_map.at("d"), "\n",
+                           "bp <address|function-name> \t\t ", usage_map.at("bp"), "\n",
+                           "bp off <address|function-name> \t ", usage_map.at("bp off"), "\n",
+                           "bt, backtrace \t\t\t\t\t ", usage_map.at("bt"), "\n",
+                           "elf \t\t\t\t\t\t\t ", usage_map.at("elf"), "\n",
+                           "help, man \t\t\t\t\t\t ", usage_map.at("man"), "\n",
+                           "version \t\t\t\t\t\t ", usage_map.at("version"), "\n\n");
+}
+
+void onIPStopped(const TracedProgram &traced) {
+  if (traced.isExiting())
+    ExclusiveIO::info_f("The program exited normally.\n");
+  else if (traced.isTrappedAtBreakpoint()) {
+    ExclusiveIO::info_f("The program hit a breakpoint.\n");
+  } else if (traced.isSegfault()) {
+    auto seg_data = traced.getSegfaultData();
+    ExclusiveIO::info_f("The program has a segfault: %s (at 0x%016lX)\n", seg_data.first.c_str(), seg_data.second);
+  }
+}
+
+void print_version() {
+  ExclusiveIO::info_nf("Current version: ", BDD_VERSION, "\n");
+}
+
 void command_loop(TracedProgram &traced) {
   bool force_end = false;
   std::vector<std::string> input;
@@ -70,21 +161,14 @@ void command_loop(TracedProgram &traced) {
 
   do {
     input.clear();
-    if (traced.isExiting())
-      ExclusiveIO::info_f("The program exited normally.\n");
-    else if (traced.isTrappedAtBreakpoint()) {
-      ExclusiveIO::info_f("The program hit a breakpoint.\n");
-    } else if (traced.isSegfault()) {
-      auto seg_data = traced.getSegfaultData();
-      ExclusiveIO::info_f("The program has a segfault: %s (at 0x%016lX)\n", seg_data.first.c_str(), seg_data.second);
-    }
+    onIPStopped(traced);
 
     ExclusiveIO::info_f("$ : ");
     input = readInput();
 
-    // TODO: Parse input char-by-char to handle optional parameters
     std::string choice = input.at(0);
-    if (choice == "run") {
+
+    if (choice == "run" || choice == "r") {
       if (traced.isDead() || traced.isExiting()) {
         ExclusiveIO::info_f("Re-run the program [Y/n]: ");
 
@@ -103,7 +187,7 @@ void command_loop(TracedProgram &traced) {
         restart(traced);
     } else if (choice.starts_with("bp")) {
       if (input.size() == 1) {
-        // ShowUsage("bp");
+        show_usage_for("bp <address|function-name>");
       } else {
         std::string bp_choice = input.at(1);
         if (bp_choice.starts_with("0x")) { // Hex choice
@@ -136,6 +220,10 @@ void command_loop(TracedProgram &traced) {
       ExclusiveIO::infoHigh_nf("\n", traced.dumpAtCurrent(), "\n");
     } else if (choice == "reg" || choice == "registers") {
       printRegisters(traced.getRegisters());
+    } else if (choice == "man" || choice == "help") {
+      print_man();
+    } else if (choice == "version") {
+      print_version();
     } else if (choice == "status") {
       traced.showStatus();
     } else if (choice == "elf") {
@@ -180,10 +268,10 @@ void command_loop(TracedProgram &traced) {
       traced.killTraced();
       force_end = true;
     } else {
-      ExclusiveIO::error_f("Unknown command.\n");
+      show_usage_for(choice);
     }
   } while (traced.isAlive() && !force_end);
-  ExclusiveIO::info_f("End of the debug_f.\n");
+  ExclusiveIO::info_f("End of the debug.\n");
 }
 
 

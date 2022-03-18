@@ -5,6 +5,9 @@
 #ifndef C_BDD_BDD_PTRACE_HPP
 #define C_BDD_BDD_PTRACE_HPP
 
+constexpr auto BDD_VERSION = "1.0b";
+
+
 #define INT3 0xCC
 
 #if INTPTR_MAX == INT64_MAX // 64 BITS ARCHITECTURE
@@ -72,6 +75,8 @@ public:
       return name;
     }
 };
+
+constexpr auto objdump_cmd_format = "objdump -C -D -S -l -w --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
 
 
 class TracedProgram {

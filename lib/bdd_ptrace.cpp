@@ -184,7 +184,6 @@ std::string getOutputFromExec(const char *cmd) {
   return result;
 }
 
-constexpr auto objdump_cmd_format = "objdump -C -D -S -l -w --start-address=0x%016lX --stop-address=0x%016lX %s | tail -n+6";
 
 std::string TracedProgram::dumpAt(addr_t address, addr_t offset) const {
   std::string cmd;
