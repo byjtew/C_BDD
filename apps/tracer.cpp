@@ -111,7 +111,7 @@ void command_loop(TracedProgram &traced) {
       ExclusiveIO::info_f("Current pointer address: 0x%016lX\n", traced.getIP());
     } else if (choice == "functions") {
       auto functionsList = traced.getElfFile().getFunctionsList();
-      printFunctionsList(functionsList, choice_param == "full");
+      printFunctionsList(functionsList, true || choice_param == "full");
     } else if (choice == "step") {
       ExclusiveIO::info_f("Stepping program.\n");
       traced.ptraceStep();
