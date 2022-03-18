@@ -284,6 +284,16 @@ std::string TracedProgram::getSegfaultCodeAsString(siginfo_t &info) {
           return "SEGV_MAPERR: Address not mapped";
         case SEGV_ACCERR:
           return "SEGV_ACCERR: Invalid permissions";
+        case SEGV_BNDERR:
+          return "SEGV_BNDERR: Bounds checking failure";
+        case SEGV_PKUERR:
+          return "SEGV_PKUERR: Protection key checking failure";
+        case SEGV_ACCADI:
+          return "SEGV_ACCADI: ADI not enabled for mapped object";
+        case SEGV_ADIDERR:
+          return "SEGV_ADIDERR: Disrupting MCD error";
+        case SEGV_ADIPERR:
+          return "SEGV_ADIPERR: Precise MCD exception";
         default:
           return "SIGSEGV: Unknown code " + std::to_string(info.si_code);
       }
