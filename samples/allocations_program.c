@@ -1,8 +1,8 @@
 //
 // Created by byjtew on 17/03/2022.
 //
-#include <stdlib.h>
-#include <stdio.h>
+#include "stdlib.h"
+#include "stdio.h"
 
 void alloc_done() {
   printf("Now, let's free these bad boys, except one.\n");
@@ -22,5 +22,5 @@ int main() {
 
   printf(" - Free a int* with calloc, size=4.\n");
   free(arr1);
-  //free(arr3);
+  free(arr3);
 }
