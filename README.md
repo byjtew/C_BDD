@@ -50,6 +50,7 @@ Before typing any fo theses commands, you should run the debugger:\
 - `d`/`dump <n>`: Display the program (assembly + C) with the next *n* lines at the current location
 - `bp <address|function-name|line>`: Creates a breakpoint at the specified location
 - `bp off <address|function-name>`: Removes a breakpoint from the specified location
+- `bp show`: Display every breakpoints
 - `bt`/`backtrace`: Show the current stack.
 - `elf`: Show elf information about the traced program.
 - `help`: Show help message

@@ -55,6 +55,8 @@ static std::map<std::string, std::string> usage_map = {
     {"bp off",                         "Removes a breakpoint from the specified location."},
     {"bp off <address|function-name>", "Removes a breakpoint from the specified location."},
 
+    {"bp show",                        "Display every breakpoints."},
+
     {"bt",                             "Show the current stack."},
     {"backtrace",                      "Show the current stack."},
     {"bt / backtrace",                 "Show the current stack."},
@@ -92,6 +94,7 @@ void manCommand() {
                            "d, dump <n> \t\t\t\t\t ", usage_map.at("d"), "\n",
                            "bp <address|function-name> \t\t ", usage_map.at("bp"), "\n",
                            "bp off <address|function-name> \t ", usage_map.at("bp off"), "\n",
+                           "bp show \t\t\t\t\t\t ", usage_map.at("bp show"), "\n",
                            "bt, backtrace \t\t\t\t\t ", usage_map.at("bt"), "\n",
                            "elf \t\t\t\t\t\t\t ", usage_map.at("elf"), "\n",
                            "help, man \t\t\t\t\t\t ", usage_map.at("man"), "\n",
@@ -132,6 +135,8 @@ void stopCommand(const TracedProgram &traced);
 
 void killCommand(const TracedProgram &traced);
 
+void bpShowCommand(TracedProgram &traced);
+
 void command_loop(TracedProgram &traced) {
   std::vector<std::string> input;
   ExclusiveIO::info_f("Debug ready.\n");
@@ -151,6 +156,8 @@ void command_loop(TracedProgram &traced) {
       restartCommand(traced);
     else if (choice.starts_with("bp") && input.size() > 1 && input.at(1).starts_with("off"))
       bpOffCommand(traced, input);
+    else if (choice.starts_with("bp") && input.size() > 1 && input.at(1).starts_with("show"))
+      bpShowCommand(traced);
     else if (choice.starts_with("bp"))
       bpCommand(traced, input);
     else if (choice == "ip" || choice == "rip" || choice == "eip")

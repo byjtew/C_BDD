@@ -91,8 +91,8 @@ addr_t TracedProgram::getElfIP() const {
 }
 
 void TracedProgram::printBreakpointsMap() const {
-  if (breakpointsMap.empty()) {
-    ExclusiveIO::debug_f("TracedProgram::printBreakpointsMap(): no breakpoint to print.\n");
+  if (breakpointsMap.empty() && pendingBreakpointsMap.empty()) {
+    ExclusiveIO::hint_f("No breakpoints yet.\n");
     return;
   }
   std::string message("== Breakpoints ==\n");
@@ -105,8 +105,21 @@ void TracedProgram::printBreakpointsMap() const {
              kv.second.getAddress());
     message.append(buffer);
   }
-  ExclusiveIO::hint_f("== Breakpoints ==\n%s== =========== ==\n", message.c_str());
+  for (const auto &bp: pendingBreakpointsMap) {
+    std::string buffer;
+    buffer.resize(256);
+    snprintf(buffer.data(), buffer.size(), "[%s]: %s (0x%016lX)\n",
+             ("PENDING"),
+             bp.getName().c_str(),
+             bp.getAddress());
+    message.append(buffer);
+  }
+  ExclusiveIO::hint_f("== Breakpoints ==\n%s", message.c_str());
+  if (!pendingBreakpointsMap.empty())
+    ExclusiveIO::hint_f("* PENDING breakpoints are placed after the first 'run'\n");
+  ExclusiveIO::hint_f("== =========== ==\n");
 }
+
 
 Breakpoint &TracedProgram::getHitBreakpoint() {
   addr_t ip = getIP();
