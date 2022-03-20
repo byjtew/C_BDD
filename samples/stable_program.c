@@ -11,7 +11,9 @@ void func(const char *msg) {
   printf("Printing from a function: %s [0x%016lX]\n", msg, (uintptr_t) func);
 }
 
-int main() {
+int main(int argc, char **argv) {
+  for (unsigned i = 1; i < argc; i++)
+    printf("My %d-th arg is %s\n", i, argv[i]);
   char input[124];
   printf("Hello, I am a stable program. My PID is %d\n", getpid());
   printf(

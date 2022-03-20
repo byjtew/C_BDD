@@ -2,8 +2,7 @@
 
 [![CMake](https://github.com/byjtew/C_BDD/actions/workflows/cmake.yml/badge.svg)](https://github.com/byjtew/C_BDD/actions/workflows/cmake.yml)
 
-C_BDD is a free and open source program analysis tool written in C++, for UNIX system only. It is designed to support C
-executables.
+C_BDD is a free and open source program analysis tool for C programs on UNIX systems only.
 
 ## Supported features
 
@@ -12,12 +11,8 @@ executables.
 - [X] **Segmentation faults**: Catch and analyse
 - [X] **Stack**: Display
 - [X] **Register values**: Display
-- [ ] **Function parameters**: Display
-- [ ] **Global variables**: Display
-- [ ] **Local variables**: Display
 - [X] **Program assembly**: Display entirely or a restricted section
 - [X] **Breakpoint**: Stop the program before a function or elf-address
-- [ ] **Memory**: Display and trace (de-)allocation
 
 ## Quick start
 
@@ -36,7 +31,6 @@ make -j
 
 ### Program arguments commands
 
-- `-m`/`--memory-check`: Run the program with a memory tracing
 - `-h`/`--help`: Show help message
 - `-v`/`--version`: Show bugger version
 
@@ -45,7 +39,7 @@ make -j
 Before typing any fo theses commands, you should run the debugger:\
 `./bin/C_BDD <traced-program-path>`
 
-- `r`/`run`: Run the traced program
+- `r`/`run <parameters>`: Run the traced program
 - `restart`: Restart the traced program from the beginning
 - `s`/`step`: Run one assembly instruction in the traced-program
 - `stop`: Try to stop the traced program

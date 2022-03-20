@@ -10,9 +10,14 @@ void TracedProgram::initChild(std::vector<char *> &parameters) {
   ExclusiveIO::debug_f("TracedProgram::initChild()\n");
   int status;
   ptrace(PTRACE_TRACEME, &status, 0);
-  parameters.push_back(nullptr);
+  char *args[32];
+  args[0] = elf_file_path.data();
+  for (unsigned i = 0; i < parameters.size(); i++)
+    args[i + 1] = parameters.at(i);
+  args[parameters.size() + 1] == nullptr;
+  std::cerr << std::endl;
   ExclusiveIO::info_f("ready, pid=%u\n", getpid());
-  execve(elf_file_path.c_str(), parameters.data(), nullptr);
+  execve(elf_file_path.c_str(), args, nullptr);
   ExclusiveIO::info_f("exit.\n");
 }
 
@@ -21,7 +26,7 @@ void TracedProgram::initBDD() {
   int status;
   attachPtrace(status);
   ram_start_address = getTracedRAMAddress();
-  elf_file = elf::ElfFile(elf_file_path);
+  placeEveryPendingBreakpoints();
   ExclusiveIO::info_f("ready.\n");
 }
 
@@ -34,12 +39,10 @@ void TracedProgram::attachPtrace(int &status) {
   ptraceContinue(false);
 }
 
-TracedProgram::TracedProgram(const std::string &exec_path, std::vector<char *> &parameters) {
+TracedProgram::TracedProgram(const std::string &exec_path) {
   elf_file_path = exec_path;
-
+  elf_file = elf::ElfFile(elf_file_path);
   ExclusiveIO::initialize(getpid());
-
-  run(parameters);
 }
 
 
@@ -80,10 +83,10 @@ void TracedProgram::ptraceStep() {
   showStatus();
 }
 
-long TracedProgram::ptraceRawStep() {
+addr_t TracedProgram::ptraceRawStep() {
   ExclusiveIO::debug_f("TracedProgram::ptraceRawStep()\n");
   ExclusiveIO::lockPrint();
-  long rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
+  addr_t rc = ptrace(PTRACE_SINGLESTEP, traced_pid, 0, 0);
   waitAndUpdateStatus();
   ExclusiveIO::unlockPrint();
   return rc;
@@ -106,7 +109,7 @@ void TracedProgram::waitAndUpdateStatus() {
 void TracedProgram::stopTraced() const {
   if (isDead()) return;
   ExclusiveIO::debug_f("Stopping the program.\n");
-  kill(traced_pid, SIGSTOP);
+  kill(traced_pid, SIGINT);
 }
 
 void TracedProgram::killTraced() const {
@@ -206,3 +209,7 @@ std::optional<user_regs_struct> TracedProgram::getRegisters() const {
   return regs;
 }
 
+
+bool TracedProgram::hasStarted() const {
+  return ram_start_address > 0;
+}

@@ -29,9 +29,12 @@ void Breakpoint::disable() {
   }
 }
 
-void TracedProgram::setBreakpoint(Breakpoint &bp) {
-  ExclusiveIO::debug_f("TracedProgram::setBreakpoint(0x%016lX)\n", bp.getAddress());
-  breakpointsMap.try_emplace(bp.getAddress(), bp);
+
+void TracedProgram::setBreakpoint(Breakpoint &breakpoint) {
+  ExclusiveIO::debug_f("TracedProgram::setBreakpoint(0x%016lX)\n", breakpoint.getAddress());
+  if (!hasStarted()) pendingBreakpointsMap.emplace_back(breakpoint);
+  else
+    breakpointsMap.try_emplace(breakpoint.getAddress(), breakpoint);
 }
 
 bool TracedProgram::breakpointAtAddress(addr_t address, std::optional<std::string> func_name) {
@@ -39,24 +42,38 @@ bool TracedProgram::breakpointAtAddress(addr_t address, std::optional<std::strin
   Breakpoint bp = (func_name) ?
                   Breakpoint(traced_pid, address, func_name.value()) :
                   Breakpoint(traced_pid, address);
-  if (!bp.enable()) return false;
+
+  if (hasStarted() && !bp.enable()) return false;
   setBreakpoint(bp);
   return true;
 }
 
 bool TracedProgram::breakpointAtAddress(const std::string &strAddress) {
   ExclusiveIO::debug_f("TracedProgram::breakpointAtAddress(%s)\n", strAddress.c_str());
-  return breakpointAtAddress((addr_t) strtoul(strAddress.c_str(), (char **) nullptr, 0), std::nullopt);
+  return breakpointAtAddress(strAddr_tToHex(strAddress), std::nullopt);
+}
+
+addr_t TracedProgram::strAddr_tToHex(const std::string &strAddress) {
+  return (addr_t) strtoul(strAddress.c_str(), (char **) nullptr, 0);
 }
 
 bool TracedProgram::breakpointAtFunction(const std::string &fctName) {
   ExclusiveIO::debug_f("TracedProgram::breakpointAtFunction(%s)\n", fctName.c_str());
-  auto programAddress = getTracedRAMAddress();
-  ExclusiveIO::debug_f("TracedProgram::breakpointAtFunction(...): programAddress = 0x%016lX\n", programAddress);
-  auto elfAddress = elf_file.getFunctionAddress(fctName);
-  ExclusiveIO::debug_f("TracedProgram::breakpointAtFunction(...): elfAddress = 0x%016lX\n", elfAddress);
-  if (elfAddress == 0) return false;
-  return breakpointAtAddress(((addr_t) (elfAddress + programAddress)), fctName);
+  if (!hasStarted()) {
+    auto pc = breakpointAtAddress(elf_file.getFunctionAddress(fctName), fctName);
+    ExclusiveIO::debug_f("TracedProgram::breakpointAtFunction(%s): pending bp, ret code = %d\n", fctName.c_str(), pc);
+    return true;
+  }
+  addr_t func_addr = getFunctionPhysicalAddress(fctName);
+  if (func_addr == 0) return false;
+  return breakpointAtAddress(func_addr, fctName);
+}
+
+addr_t TracedProgram::getFunctionPhysicalAddress(const std::string &fctName) const {
+  assert(isAlive());
+  addr_t programAddress = getTracedRAMAddress();
+  addr_t elfAddress = elf_file.getFunctionAddress(fctName);
+  return programAddress + elfAddress;
 }
 
 
@@ -100,6 +117,22 @@ Breakpoint &TracedProgram::getHitBreakpoint() {
 
 bool TracedProgram::isTrappedAtBreakpoint() const {
   auto ip = getIP();
-  printBreakpointsMap();
   return breakpointsMap.contains(ip);
 }
+
+bool TracedProgram::disableBreakpointAtFunction(const std::string &func_name) {
+  addr_t func_addr = getFunctionPhysicalAddress(func_name);
+  if (func_addr == 0 || !breakpointsMap.contains(func_addr)) return false;
+  auto bp = breakpointsMap.at(func_addr);
+  bp.disable();
+  return true;
+}
+
+bool TracedProgram::disableBreakpointAtAddress(const std::string &hex_addr_as_str) {
+  addr_t parsed_addr = strAddr_tToHex(hex_addr_as_str);
+  if (!breakpointsMap.contains(parsed_addr)) return false;
+  auto bp = breakpointsMap.at(parsed_addr);
+  bp.disable();
+  return true;
+}
+

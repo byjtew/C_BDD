@@ -2,6 +2,7 @@
 // Created by byjtew on 18/03/2022.
 //
 
+#include <cassert>
 #include "bdd_ptrace.hpp"
 
 
@@ -130,5 +131,20 @@ std::string TracedProgram::getSegfaultCodeAsString(siginfo_t &info) {
       return "[SIGNAL " + std::to_string(info.si_signo) + "]: Unknown";
   }
 }
+
+std::vector<std::pair<Breakpoint, bool>> TracedProgram::placeEveryPendingBreakpoints() {
+  assert(isAlive());
+  std::vector<std::pair<Breakpoint, bool>> status;
+  for (Breakpoint &bp: pendingBreakpointsMap) {
+    addr_t real_addr =
+        bp.getAddress() < getTracedRAMAddress() ? bp.getAddress() + getTracedRAMAddress() : bp.getAddress();
+
+    status.emplace_back(bp, breakpointAtAddress(real_addr, bp.getName()));
+  }
+  pendingBreakpointsMap.clear();
+  return status;
+}
+
+
 
 
