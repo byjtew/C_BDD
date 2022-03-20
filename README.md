@@ -25,7 +25,7 @@ mkdir build
 cd build
 cmake ..
 make -j
-./bin/c_bdd ../samples/stable_program
+./apps/c_bdd ../samples/stable_program
 ```
 
 ## Documentation & Usage
