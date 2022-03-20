@@ -20,6 +20,7 @@ Please read the [requirements](#Requirements) specific notes before running this
 
 ```bash
 git clone https://github.com/byjtew/C_BDD.git
+cd C_BDD
 mkdir build
 cd build
 cmake ..
