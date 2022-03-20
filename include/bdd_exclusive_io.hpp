@@ -5,6 +5,8 @@
 #ifndef C_BDD_BDD_EXCLUSIVE_IO_HPP
 #define C_BDD_BDD_EXCLUSIVE_IO_HPP
 
+#define DEBUG 0
+
 #pragma GCC diagnostic ignored "-Wformat-security"
 
 #define EXCLUSIVE_IO_MMAP_NAME "/tmp/mmap_bdd_stdoutmutex"
@@ -20,7 +22,6 @@
 
 typedef struct synchronisation_mutex {
     pthread_mutex_t print_mutex;
-    pthread_mutex_t log_print_mutex;;
 } synchronisation_mutex_t;
 
 class ExclusiveIO {
@@ -40,31 +41,12 @@ private:
 
     inline static pid_t parent_pid;
     inline static synchronisation_mutex_t *synchronisation_map;
-    inline static std::ofstream log_ofstream;
 
-    static void lockPrint() {
-      pthread_mutex_lock(&synchronisation_map->print_mutex);
-    }
-
-    static void unlockPrint() {
-      pthread_mutex_unlock(&synchronisation_map->print_mutex);
-    }
-
-    static void lockLogPrint() {
-      pthread_mutex_lock(&synchronisation_map->log_print_mutex);
-    }
-
-    static void unlockLogPrint() {
-      pthread_mutex_unlock(&synchronisation_map->log_print_mutex);
-    }
 
     static bool isParent() {
       return getpid() == parent_pid;
     }
 
-    static std::ofstream &getLogStream() {
-      return log_ofstream;
-    }
 
     template<typename... Args>
     static std::string formatArgs(const std::string_view &rt_fmt_str, Args &&... args) {
@@ -96,21 +78,20 @@ private:
       unlockPrint();
     }
 
-    template<typename... Args>
-    static void genericFilePrint(const std::string_view &rt_fmt_str, Args &&... args) {
-      lockLogPrint();
-      getLogStream() << formatArgs(rt_fmt_str, args...);
-      unlockLogPrint();
-    }
-
-    static void createLogFile();
-
     static void mmapExclusionStructure();
 
 public:
     static void initialize(pid_t parentPid);
 
     static void terminate();
+
+    static void lockPrint() {
+      pthread_mutex_lock(&synchronisation_map->print_mutex);
+    }
+
+    static void unlockPrint() {
+      pthread_mutex_unlock(&synchronisation_map->print_mutex);
+    }
 
 #pragma region Formatted print
 
@@ -132,14 +113,16 @@ public:
 
     template<typename... Args>
     static void debug_f(const std::string_view &rt_fmt_str, Args &&... args) {
+#if DEBUG
       ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_GRAY, rt_fmt_str, std::forward<Args>(args)...);
-      //ExclusiveIO::genericFilePrint(rt_fmt_str, std::forward<>(args)...);
+#endif
     }
 
     template<typename... Args>
     static void debugError_f(const std::string_view &rt_fmt_str, Args &&... args) {
+#if DEBUG
       ExclusiveIO::genericFormatPrint(std::cout, color_t::FG_BRIGHT_WHITE, rt_fmt_str, std::forward<Args>(args)...);
-      //ExclusiveIO::genericFilePrint(rt_fmt_str, std::forward<>(args)...);
+#endif
     }
 
 #pragma endregion
@@ -170,17 +153,20 @@ public:
 
     template<typename... Args>
     static void debug_nf(Args &&... args) {
+#if DEBUG
       ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_GRAY, std::forward<Args>(args)...);
-      //ExclusiveIO::genericFilePrint( std::forward<>(args)...);
+#endif
     }
 
     template<typename... Args>
     static void debugError_nf(Args &&... args) {
+#if DEBUG
       ExclusiveIO::genericNotFormatPrint(std::cout, color_t::FG_BRIGHT_WHITE, std::forward<Args>(args)...);
-      //ExclusiveIO::genericFilePrint( std::forward<>(args)...);
+#endif
     }
 
 #pragma endregion
+
 
     template<typename T>
     static void input(T &buf) {

@@ -80,7 +80,7 @@ namespace elf {
 
         [[maybe_unused]] [[nodiscard]] std::string getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) const;
 
-        [[maybe_unused]] [[nodiscard]] std::string getSectionName(const Elf_Shdr &sHeader);
+        [[maybe_unused]] [[nodiscard]] std::string getSectionName(const Elf_Shdr &sHeader) const;
 
         [[maybe_unused]] [[nodiscard]] std::vector<unsigned int>
         getSectionHeaderIndexesByType(Elf_SectionType type) const;
@@ -112,7 +112,7 @@ namespace elf {
 
         [[maybe_unused]] void printSectionsHeaders(FILE *fp = stdout);
 
-        [[maybe_unused]] void printSectionHeaderAt(int index, FILE *fp = stdout);
+        [[maybe_unused]] void printSectionHeaderAt(int index, FILE *fp = stdout) const;
 
         [[maybe_unused]] void printSymbolEntries(FILE *fp = stdout);
 
@@ -123,6 +123,11 @@ namespace elf {
         [[nodiscard]] Elf_SymRef getSymbolSectionAt(unsigned int index, unsigned offset) const;
 
         [[nodiscard]] std::vector<std::pair<addr_t, std::string>> getFunctionsList() const;
+
+        /**
+         * Find every Elf section's type & name, both as strings
+         */
+        [[nodiscard]] std::vector<std::pair<std::string, std::string>> getSymbolsNames() const;
     };
 
 

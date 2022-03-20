@@ -1,0 +1,171 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "lib",
+					"jsonFile" : "directory-lib-Release-c12f15c6f888b43a891c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "lib",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				},
+				{
+					"build" : "samples",
+					"jsonFile" : "directory-samples-Release-88afea7703804c5d5448.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "samples",
+					"targetIndexes" : 
+					[
+						3,
+						5,
+						6
+					]
+				},
+				{
+					"build" : "apps",
+					"jsonFile" : "directory-apps-Release-76fddd1453400e648719.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "apps",
+					"targetIndexes" : 
+					[
+						4,
+						7
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3
+					],
+					"name" : "C_BDD",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "BDD_elf::@306ed2d68c6501e8728f",
+					"jsonFile" : "target-BDD_elf-Release-f3d3eef7d4f46d9782c2.json",
+					"name" : "BDD_elf",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "BDD_exclusive_io::@306ed2d68c6501e8728f",
+					"jsonFile" : "target-BDD_exclusive_io-Release-284be2821806f7208780.json",
+					"name" : "BDD_exclusive_io",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "BDD_ptrace::@306ed2d68c6501e8728f",
+					"jsonFile" : "target-BDD_ptrace-Release-15e3915b47a0904bcb76.json",
+					"name" : "BDD_ptrace",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "allocations_program::@fd003194bc69d7fb51e8",
+					"jsonFile" : "target-allocations_program-Release-b8f52a210c3ce13e00fb.json",
+					"name" : "allocations_program",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "readelf::@9e189ee61a034fc9b705",
+					"jsonFile" : "target-readelf-Release-737db0b57e036aadd1d7.json",
+					"name" : "readelf",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "segfault_program::@fd003194bc69d7fb51e8",
+					"jsonFile" : "target-segfault_program-Release-ae51d5147e5e80db6ee3.json",
+					"name" : "segfault_program",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "stable_program::@fd003194bc69d7fb51e8",
+					"jsonFile" : "target-stable_program-Release-00f1d0c27682defc116e.json",
+					"name" : "stable_program",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "tracer::@9e189ee61a034fc9b705",
+					"jsonFile" : "target-tracer-Release-17844bf618cd44918129.json",
+					"name" : "tracer",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/byjtew93/C_BDD/cmake-build-release",
+		"source" : "/home/byjtew93/C_BDD"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

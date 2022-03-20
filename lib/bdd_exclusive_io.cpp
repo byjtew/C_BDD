@@ -24,20 +24,6 @@ void ExclusiveIO::mmapExclusionStructure() {
                                                          0);
 }
 
-void ExclusiveIO::createLogFile() {
-  std::string log_filename;
-  log_filename.resize(32);
-  time_t t = time(nullptr);
-  struct tm tm = *localtime(&t);
-  snprintf(log_filename.data(), log_filename.size(), "./logs-%d-%02d-%02d %02d:%02d:%02d.log", tm.tm_year + 1900,
-           tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-
-  getLogStream().open(log_filename);
-  if (getLogStream().fail())
-    std::cerr << "log_fp creation error" << std::endl;
-}
-
-
 #pragma endregion
 
 
@@ -54,19 +40,13 @@ void ExclusiveIO::initialize(pid_t parentPid) {
   if (pthread_mutexattr_setpshared(&mutexattr, PTHREAD_PROCESS_SHARED))
     throw std::invalid_argument("pthread_mutexattr_setpshared");
 
-  createLogFile();
-
   if (pthread_mutex_init(&synchronisation_map->print_mutex, &mutexattr))
     throw std::invalid_argument("pthread_mutex_init for print_mutex");
-  if (pthread_mutex_init(&synchronisation_map->log_print_mutex, &mutexattr))
-    throw std::invalid_argument("pthread_mutex_init for log_print_mutex");
-
 }
 
 void ExclusiveIO::terminate() {
   std::cout << std::flush;
   munmap(synchronisation_map, sizeof(synchronisation_mutex_t));
-  getLogStream().close();
 }
 
 

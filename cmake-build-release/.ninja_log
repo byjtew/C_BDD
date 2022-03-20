@@ -1,0 +1,14 @@
+# ninja log v5
+5910	5917	1647791087572607021	lib/libBDD_elf.a	12ed8530f3a36c8
+38	7063	1647791763993383173	lib/CMakeFiles/BDD_ptrace.dir/bdd_ptrace_breakpoint.cpp.o	7fdeeedbf943edbf
+5899	5962	1647791877801757700	lib/libBDD_ptrace.a	32a5e8eb980dce1c
+67	93	1647791080720620184	samples/stable_program	8e7bd09e46db490
+27	6558	1647791763489381610	lib/CMakeFiles/BDD_ptrace.dir/bdd_signals.cpp.o	c5e05c9742ce71d0
+7	5910	1647791087564607035	lib/CMakeFiles/BDD_elf.dir/bdd_elf.cpp.o	80fff5d0ed4a7dc
+5962	6212	1647791878049758559	apps/tracer	433aadb93f4364d
+4782	4871	1647791761801376378	lib/libBDD_exclusive_io.a	5cee2f9301c49861
+0	67	1647791080692620240	samples/CMakeFiles/stable_program.dir/stable_program.c.o	9ea3119761e69aab
+57	9725	1647791766657391455	apps/CMakeFiles/tracer.dir/tracer.cpp.o	9f88133afc49d606
+2	5899	1647791877737757479	lib/CMakeFiles/BDD_ptrace.dir/bdd_ptrace.cpp.o	c330ecde98c86c92
+2	4782	1647791761701376069	lib/CMakeFiles/BDD_exclusive_io.dir/bdd_exclusive_io.cpp.o	547c333ef3024f14
+19	5885	1647791762817379526	lib/CMakeFiles/BDD_ptrace.dir/bdd_unwind.cpp.o	d4c15e492a5ffab9

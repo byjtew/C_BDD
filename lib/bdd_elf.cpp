@@ -163,7 +163,8 @@ std::string ElfFile::getSectionTypeAsString(const Elf_Shdr &sHeader) {
   }
 }
 
-void ElfFile::printSectionHeaderAt(int index, FILE *fp) {
+void ElfFile::printSectionHeaderAt(int index, FILE *fp) const {
+  if (index < 0 || index >= sectionsHeaders.size()) return;
   auto sHeader = sectionsHeaders.at(index);
   fprintf
       (fp,
@@ -251,7 +252,6 @@ ElfFile::ElfFile(const std::string &elf_filepath) {
   input.close();
 }
 
-
 Elf_Shdr ElfFile::getSectionHeaderByType(Elf_SectionType type) const {
   return *std::find_if(std::execution::par, sectionsHeaders.cbegin(), sectionsHeaders.cend(),
                        [type](const Elf_Shdr &each) {
@@ -300,12 +300,13 @@ std::string ElfFile::getNameFromStringTable(unsigned strTableIndex, unsigned off
   return data_ptr + offset;
 }
 
-std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) {
+std::string ElfFile::getSectionName(const Elf_Shdr &sHeader) const {
   return getNameFromStringTable(header.e_shstrndx, sHeader.sh_name);
 }
 
 std::string ElfFile::getSymbolName(const Elf_Shdr &sHeader, const Elf_SymRef &sym) const {
-  return getNameFromStringTable(sHeader.sh_link, sym.st_name);
+  auto raw_name = getNameFromStringTable(sHeader.sh_link, sym.st_name);
+  return raw_name.c_str();
 }
 
 std::string ElfFile::getSymbolBindingAsString(const Elf_SymRef &sym) {
@@ -333,8 +334,11 @@ std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
     Elf_Shdr sHdr = sectionsHeaders.at(e);
     for (unsigned i = 0; i < getSymbolCount(sHdr); i++) {
       Elf_SymRef symbolSectionData = getSymbolSectionAt(e, i * sHdr.sh_entsize);
+      if ((symbolSectionData.st_info & 0x0F) != Elf_SymbolTypeFunctionEntryPoint) continue;
+      auto address = symbolSectionData.st_value;
       auto name = getSymbolName(sHdr, symbolSectionData);
-      functions.emplace_back((addr_t) symbolSectionData.st_value, name);
+      if (!name.empty())
+        functions.emplace_back(address, name.substr(0, name.find('(')));
     }
   }
   return functions;
@@ -342,13 +346,22 @@ std::vector<std::pair<addr_t, std::string>> ElfFile::getFunctionsList() const {
 
 addr_t ElfFile::getFunctionAddress(const std::string &fct_name) const {
   auto list = getFunctionsList();
-  return std::find_if(std::execution::par, list.cbegin(), list.cend(), [fct_name](const auto &e) {
-      return e.second == fct_name;
-  })->first;
+  return std::find_if(std::execution::par, list.cbegin(), list.cend(),
+                      [fct_name](const std::pair<addr_t, std::string> &e) {
+                          return e.second == fct_name;
+                      })->first;
 }
 
 unsigned ElfFile::getSymbolCount(const Elf_Shdr &sHdr) {
   return (unsigned) sHdr.sh_size / sHdr.sh_entsize;
+}
+
+std::vector<std::pair<std::string, std::string>> ElfFile::getSymbolsNames() const {
+  std::vector<std::pair<std::string, std::string>> names;
+  std::for_each(sectionsHeaders.begin(), sectionsHeaders.end(), [this, &names](const Elf_Shdr &e) {
+      names.emplace_back(getSectionTypeAsString(e), getSectionName(e));
+  });
+  return names;
 }
 
 
