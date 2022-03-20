@@ -5,7 +5,7 @@
 #ifndef C_BDD_BDD_EXCLUSIVE_IO_HPP
 #define C_BDD_BDD_EXCLUSIVE_IO_HPP
 
-#define DEBUG 1
+#define DEBUG 0
 
 #pragma GCC diagnostic ignored "-Wformat-security"
 
