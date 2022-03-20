@@ -24,7 +24,7 @@ mkdir build
 cd build
 cmake ..
 make -j
-./bin/C_BDD ./samples/tutorial_program
+./bin/c_bdd ../samples/stable_program
 ```
 
 ## Documentation & Usage
@@ -90,4 +90,3 @@ possible so that I can assist you as quickly as possible.
 - [liblzma-dev](https://github.com/kobolabs/liblzma)
 - [libfmt-dev](https://github.com/fmtlib/fmt)
 - [objdump](https://www.man7.org/linux/man-pages/man1/objdump.1.html) (Recommended)
-- [addr2line](https://www.man7.org/linux/man-pages/man1/addr2line.1.html) (Recommended)
