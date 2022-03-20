@@ -12,12 +12,15 @@ void TracedProgram::initChild(std::vector<char *> &parameters) {
   ptrace(PTRACE_TRACEME, &status, 0);
   char *args[32];
   args[0] = elf_file_path.data();
-  for (unsigned i = 0; i < parameters.size(); i++)
+  args[parameters.size() + 1] = nullptr;
+  ExclusiveIO::debug_f("Executing %s ", elf_file_path.c_str());
+  for (unsigned i = 0; i < parameters.size(); i++) {
     args[i + 1] = parameters.at(i);
-  args[parameters.size() + 1] == nullptr;
+    ExclusiveIO::debug_f("%s ", args[i + 1]);
+  }
   std::cerr << std::endl;
   ExclusiveIO::info_f("ready, pid=%u\n", getpid());
-  execve(elf_file_path.c_str(), args, nullptr);
+  execv(elf_file_path.c_str(), args);
   ExclusiveIO::info_f("exit.\n");
 }
 
@@ -119,9 +122,10 @@ void TracedProgram::killTraced() const {
 }
 
 void TracedProgram::run(std::vector<char *> &parameters) {
-  if (isAlive())
+  if (isAlive()) {
+    std::cerr << " isAlive()" << std::endl;
     clearCurrentProcess();
-
+  }
   do {
     traced_pid = fork();
     switch (traced_pid) {
